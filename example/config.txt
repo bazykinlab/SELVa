@@ -1,0 +1,72 @@
+ALPHABET  ARNDCEQGHILKMFPSTWYV
+
+#what is the length of a sequence (for one landscape instance?)
+LENGTH 100
+
+#how many independent landscapes do we have?
+NUM_INSTANCES 2
+
+
+TREE_FILE simple.tre
+
+#How many threads should we use?
+#num_threads <= num_instances.  We currently do not have the functionality to
+#multiithread a single instance/landscape histories.  The default is 1
+NUM_THREADS 1
+
+#Print info on when and how landscape changes?
+#This can seriously increase memory usage/slow down execution, so set it to true only if you need the info
+
+PRINT_LANDSCAPE_INFO true
+
+#INITIAL_FITNESS: {lognorm, gamma, file}
+#if "file", specify FITNESS_FILE
+#if "lognorm", specify DIST_PARAM=sigma (mu is set to be 0)
+#if "gamma", specify DIST_PARAM=alpha (beta is set to be alpha, as is done by Yang)
+
+INITIAL_FITNESS file
+
+#If INITIFAL FITNESS is set to file, specify its path here
+FITNESS_FILE fitness_20aa_1_0.1.txt
+
+# The parameter governing the landsacape probability distribution (if used)
+DIST_PARAM 1
+
+#how do we change the fitness?  
+#we could sample it from the same distribution as initial fitness (iid), 
+#obtain it by randomly reshuffling the previous array (shuffle)
+# or change the fitness of the current allele only (current_allele_dependent) in an age-dependent manner
+#In the latter case, AGE_DEPENDENCE_COEFFICIENT must also be set
+#NEW_FITNESS_RULE : {iid,  shuffle, current_allele_dependent}
+NEW_FITNESS_RULE shuffle
+
+###### The following parameters govern the timing of landscape changes
+#LANDSCAPE_CHANGE_TIMING selects the overall landscape change behavior
+#when do we change the landscape?
+#LANDSCAPE_CHANGE_TIMING (stochastic, fixed_num_intervals, fixed_interval_length)
+#stochastically as a poisson process governed by the LANDSCAPE_CHANGE_PARAMETER (stochastic)
+#at N fixed intervals, N = LANDSCAPE_CHANGE_PARAMETER (fixed_num_intervals)
+#every LANDSCAPE_CHANGE_PARAMETER time units (fixed_interval_length)
+
+LANDSCAPE_CHANGE_TIMING stochastic
+
+#Auxiliary parameter governing the specifics of the landscape change timing, its interpretation dependent on LANDSCAPE_CHANGE_TIMING
+
+LANDSCAPE_CHANGE_PARAMETER 0.0
+
+#The following parameter is needed if and only if LANDSCAPE_CHANGE_TIMING is set to current_allele_dependent
+#if W = W_0+kt, where W is the fitness of the current allele, this is k (and LANDSCAPE_CHANGE_INTERVAL is t)
+#AGE_DEPENDENCE_COEFFICIENT 0.01
+
+#SHARED_LANDSCAPE is true if all branches _in_the_same_instance_ share the same landscape.
+#false if each branch has its own landscape.  The default is false
+SHARED_LANDSCAPE false
+
+
+##### Advanced options #####
+#Do we make the substitution rate constant (equal to tree branch length unit)?
+
+CONSTANT_RATE true
+
+#If the substitution rate is not constant, do we scale the landscape change rate to it?
+SCALE_LANDSCAPE_CHANGE_TO_SUBSTITUTION_RATE true

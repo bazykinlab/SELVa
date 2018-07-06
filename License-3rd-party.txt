@@ -1,0 +1,7 @@
+This work uses the following third-party libraries:
+- libnewicktree v1.0 licensed under the BSD license
+https://github.com/cjb/libnewicktree
+ - Apache Commons Lang v3.5 licensed under the Apache License, v2.0
+https://commons.apache.org/proper/commons-lang/
+ - Apache Commons Math v3.6.1 licensed under the Apache License, v2.0
+http://commons.apache.org/proper/commons-math/
