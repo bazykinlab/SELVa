@@ -22,5 +22,8 @@ To run the simulator, open the command line prompt, go to the directory where th
 
 Currently, the jar is built using Java 1.7, so you have to have the corresponding JDK on your system.
 
+### Getting started
+The `example` directory has some sample files to get you started
+
 #### What SELVa does:
 SELVa simulates point mutations (no indels yet) along a user-provided phylogenetic tree (given in a separate file in the Newick format).  These substitutions are governed by a fitness landscape that is specified by a vector giving the fitness of each allele.  The fitness landscape can change discretely according to rules set by the user in the config file.  The config files also specifies everything else about the simulation, including the sequence alphabet, the length of the sequence, the number of processors used, whether to print the intermediate fitness values, etc.  Detailed information about the config file options is given in the Manual.
