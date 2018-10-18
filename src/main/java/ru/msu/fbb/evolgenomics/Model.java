@@ -28,7 +28,9 @@ public class Model{
     private static boolean qNormalization = true;
     private static boolean scaleLandscapeChangeToSubstitutionRate = false;
     private static double[] initialFitnessVectorFromFile; //the fitness vectore read from file
-    
+
+    private static HashMap<String, Double> changeBranchAndTimes;
+
     public static void setLandscapeChangeRate( double r){ landscapeChangeRate = r;}
     public static void setLandscapeChangeInterval(double x){landscapeChangeInterval = x;}
     public static double getLandscapeChangeRate() {return landscapeChangeRate;}
@@ -59,7 +61,21 @@ public class Model{
     public static boolean sharedLandscape(){return sharedLandscape;}
     public static boolean fixSumFitness(){ return false; }     //not used
     public static boolean printFitnessInfo(){ return printFitnessInfo;  }
+    public static boolean changeAtSpecifiedBranchAndTime(){
+	return landscapeChangeTiming == LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME;
+    }
 
+    /**
+     * @param node finishing the branch that is queries
+     * @return Double.NEGATIVE_INFINITY if no change this branch, time till the end node otherwise
+     */
+    public static double getChangeTimeThisBranch(BasicNode node){
+	String nodeName = node.toString();
+	if (changeBranchAndTimes.containsKey(nodeName))
+	    return changeBranchAndTimes.get(nodeName);
+	else
+	    return Double.NEGATIVE_INFINITY;
+    }
     //wrapper function that throws a slightly more informative exception when a parameter is missing (or misspelled)
     private static String getRequiredParameter(String parameter) throws MissingParameterException {
 	  String response = configValues.get(parameter);
@@ -87,7 +103,7 @@ public class Model{
 	return java.util.Arrays.copyOf(initialFitnessVectorFromFile, initialFitnessVectorFromFile.length);
     }
 
-    public static void readFitnessFromFile(){
+    private static void readFitnessFromFile(){
 	initialFitnessVectorFromFile = new double[alphabet.length()];
  	//alphabetSize = Model.getAlphabet().length();
 	// double[] fitness = new double[alphabetSize];
@@ -110,6 +126,41 @@ public class Model{
 	}
     }
 
+    /** Read the prespecified coordinates of landscape changes from a file
+     * @param changeBranchAndTimeFileStr - name of the file with landscape change coordinates
+     */
+    private static void readChangeBranchAndTimeFile(String changeBranchAndTimeFileStr){
+	changeBranchAndTimes = new HashMap<String, Double> ();
+	try{
+	    Scanner sc = new Scanner(new File(changeBranchAndTimeFileStr));
+	    
+	    while (sc.hasNextLine()){
+		String line = sc.nextLine();
+		if (line.length() == 0 )
+		    continue;
+		String[] fields = line.split("\\s+");
+		if (fields.length!=2){
+		    System.err.println("error in change branch time file " + changeBranchAndTimeFileStr);
+		    System.err.println("line: " + line);
+		}
+		else{
+		    try{
+			String branch = fields[0];
+			double time = Double.parseDouble(fields[1]);
+			changeBranchAndTimes.put(branch, time);
+
+			System.out.println("add " + branch + " time");
+		    }catch (NumberFormatException ne){
+			System.err.println("change branch time file " + changeBranchAndTimeFileStr + ": couldn't parse line " + line );
+			System.exit(-1);
+		    }
+		}
+	    }
+	}catch (IOException ioe){
+	    System.err.println("Error opening change branch time file " + changeBranchAndTimeFileStr);
+	    System.exit(-1);
+	}
+    }
     
     public static void printParams(){
 	System.out.println("Parameter values are:");
@@ -187,7 +238,7 @@ public class Model{
 	    if (landscapeChangeTimingStr == null)
 		landscapeChangeTimingStr = configValues.get("LANDSCAPE_CHANGE_RULE"); //old in-house name, supported for backward compatibility
 	    if (landscapeChangeTimingStr == null)
-		throw new MissingParameterException("LANDSCAPE_CHANG_TIMING");
+		throw new MissingParameterException("LANDSCAPE_CHANGE_TIMING");
 	    landscapeChangeTiming = LandscapeChangeTiming.stringToEnum(landscapeChangeTimingStr);
 	    
 	    String sharedLandscapeStr = configValues.get("SHARED_LANDSCAPE");
@@ -196,8 +247,17 @@ public class Model{
 	    else
 		sharedLandscape =  Boolean.parseBoolean(sharedLandscapeStr);
 
-	    landscapeChangeParameter = Double.parseDouble(getRequiredParameter("LANDSCAPE_CHANGE_PARAMETER"));
-	    
+	    if (landscapeChangeTiming != LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME)
+		landscapeChangeParameter = Double.parseDouble(getRequiredParameter("LANDSCAPE_CHANGE_PARAMETER"));
+	    else{
+		String changeBranchAndTimeFileStr = configValues.get("CHANGE_BRANCH_AND_TIME_FILE");
+		readChangeBranchAndTimeFile(changeBranchAndTimeFileStr);
+		//TODO: this
+	    }
+
+	    if (landscapeChangeTiming==LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME &&
+		sharedLandscape == true)
+		throw new InvalidParameterCombinationException("Can't have shared landscape and specified branch and time of change");
 	    // String fixSumFitnessStr = configValues.get("FIX_SUM_FITNESS");
 	    // if (fixSumFitnessStr == null)
 	    // 	fixSumFitness = false;

@@ -326,20 +326,29 @@ public class EvolutionaryProcess implements Runnable{
 		    int positionChanged = -1;
 
 		    //time until next deterministic landscape change left over from the parent node
-		    double timeTillDeterministicLandscapeChange = bfsNode.parentTimeTillDeterministicLandscapeChange; 
+		    double timeTillDeterministicLandscapeChange = bfsNode.parentTimeTillDeterministicLandscapeChange;
+		    //if we want the change to take place at prespecified positions,
+		    //override this value (shd be 0) just for this branch
+
+		    if (Model.changeAtSpecifiedBranchAndTime()){
+			//System.out.println("here");
+			
+		       	timeTillDeterministicLandscapeChange = (double)child.getLength() - Model.getChangeTimeThisBranch(child);
+		    }
+		    
+		    System.out.println(child + ": time till next change: " + timeTillDeterministicLandscapeChange);
 		    
 		    while (branchLeft > 0){//this condition will always be true, i think
-
 			//get the time till next stochastic event
 			//(substitution and/or stochastic landscape change)
 			double timeTillNextStochasticEvent = random.sampleExponential(seqStr.sumRates);
 
 			if (timeTillDeterministicLandscapeChange < branchLeft  &&
 			    timeTillDeterministicLandscapeChange < timeTillNextStochasticEvent){
-			// if the next thing that's going to happen is deterministic landscape change...
-
+			    // if the next thing that's going to happen is deterministic landscape change...
+			    
 			    branchLeft -= timeTillDeterministicLandscapeChange;
-
+			    
 			    if (Model.debug()){
 				System.out.println(id + ": change landscape deterministically at time "+ branchLeft +" before " + child + " whose depth is " + child.getDepth());
 				//				System.out.println("seq: " + java.util.Arrays.toString(seqStr.seq));

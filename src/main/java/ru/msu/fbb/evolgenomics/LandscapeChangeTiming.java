@@ -3,7 +3,7 @@
  */
 
 public enum LandscapeChangeTiming{
-    STOCHASTIC, FIXED_INTERVAL_LENGTH, FIXED_NUM_CHANGES;
+    STOCHASTIC, FIXED_INTERVAL_LENGTH, FIXED_NUM_CHANGES, SPECIFIED_BRANCH_AND_TIME;
 
     /**
      * Return the enum corresponding to the given string (case-insensitive)

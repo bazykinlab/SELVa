@@ -43,12 +43,13 @@ NEW_FITNESS_RULE shuffle
 ###### The following parameters govern the timing of landscape changes
 #LANDSCAPE_CHANGE_TIMING selects the overall landscape change behavior
 #when do we change the landscape?
-#LANDSCAPE_CHANGE_TIMING (stochastic, fixed_num_intervals, fixed_interval_length)
+#LANDSCAPE_CHANGE_TIMING (stochastic, fixed_num_intervals, fixed_interval_length, specified_branch_and_time)
 #stochastically as a poisson process governed by the LANDSCAPE_CHANGE_PARAMETER (stochastic)
 #at N fixed intervals, N = LANDSCAPE_CHANGE_PARAMETER (fixed_num_intervals)
 #every LANDSCAPE_CHANGE_PARAMETER time units (fixed_interval_length)
+#at branch and time specified in the CHANGE_BRANCH_TIME_FILE  (specified_branch_and_time).  The file namemust be given
 
-LANDSCAPE_CHANGE_TIMING stochastic
+LANDSCAPE_CHANGE_TIMING specified_branch_and_time
 
 #Auxiliary parameter governing the specifics of the landscape change timing, its interpretation dependent on LANDSCAPE_CHANGE_TIMING
 
@@ -57,6 +58,12 @@ LANDSCAPE_CHANGE_PARAMETER 0.0
 #The following parameter is needed if and only if LANDSCAPE_CHANGE_TIMING is set to current_allele_dependent
 #if W = W_0+kt, where W is the fitness of the current allele, this is k (and LANDSCAPE_CHANGE_INTERVAL is t)
 #AGE_DEPENDENCE_COEFFICIENT 0.01
+
+#the following parameter is required if and only if the landscape should change
+#at specified branch and time
+#it should contain, on separate lines, node names _following_ the change and
+#times remaining until those nodes (space separated)
+CHANGE_BRANCH_AND_TIME_FILE change_branch_time.txt
 
 #SHARED_LANDSCAPE is true if all branches _in_the_same_instance_ share the same landscape.
 #false if each branch has its own landscape.  The default is false
