@@ -6,16 +6,17 @@ import java.io.*;
 public class Fitness{
 
     /**
-     * Fill the fitness vector by sampling from the gamma distribution with alpha = beta
+     * Fill the fitness vector by sampling from the gamma distribution with alpha and beta
      * @param fitness vector to fill
-     * @param alpha alpha=beta
+     * @param alpha alpha
+     * @param beta beta
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */
-    public static void gammaFitness(double[] fitness, double alpha,
+    public static void gammaFitness(double[] fitness, double alpha, double beta,
 				    RandomNumberGenerator random){
 	//	System.out.println("gamma");
 	for (int i = 0; i < fitness.length; i++)
-	    fitness[i] = random.sampleGamma(alpha);
+	    fitness[i] = random.sampleGamma(alpha, beta);
     }
     /**
      * Fill the fitness vector by sampling from the gamma distribution with parameters from config
@@ -23,8 +24,8 @@ public class Fitness{
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */
     public static void gammaFitness(double[] fitness, RandomNumberGenerator random){
-	double DIST_PARAM = Model.getDistParam();
-	gammaFitness(fitness, DIST_PARAM, random);
+	//	double DIST_PARAM = Model.getDistParam();
+	gammaFitness(fitness, Model.getGammaAlpha(), Model.getGammaBeta(), random);
     }
 
 

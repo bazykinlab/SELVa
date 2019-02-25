@@ -3,7 +3,7 @@
  */
 
 public enum NewFitnessRule{
-    SHUFFLE, IID, CURRENT_ALLELE_DEPENDENT;
+    SHUFFLE, IID, CURRENT_ALLELE_DEPENDENT, USER_SET;
 
     /**
      * Return the enum corresponding to the given string (case-insensitive)

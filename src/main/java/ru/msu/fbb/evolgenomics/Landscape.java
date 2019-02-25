@@ -260,9 +260,10 @@ public class Landscape{
      * @param createNewLandscape should we create a new landscape object? True if landscapes are shared
      * between parallel branches, or this is the first time we change landscape on the current branch
      * @param character the current allele (index).  Relevant for allele-specific landscape change
+     * @param newFtness new fitness vector specified by user; null if not specified      
      * @return the "next" landsacpe
      */
-    public static Landscape getNewLandscape(Landscape ls, boolean createNewLandscape, byte character){
+    public static Landscape getNewLandscape(Landscape ls, boolean createNewLandscape, byte character, double[] newFitness){
 	Landscape currentLS = ls; //prepare for being able to reuse the old Landscape object
 	
 	//first consider the case where landscapes are shared between paralell branches
@@ -273,7 +274,7 @@ public class Landscape{
 		if (Model.debug())
 		    System.out.println("generate shared landscape on demand");
 		ls.nextLandscape = new Landscape(ls); //at first, next landscape is identical to old one
-		ls.nextLandscape.changeQ(character);  //then immediatley change it
+		ls.nextLandscape.changeQ(character, newFitness);  //then immediatley change it
 	    }	else{ //if it has been generated before, don't generate it
 		if (Model.debug())
 		    System.out.println("next shared landscape generated before");
@@ -288,7 +289,7 @@ public class Landscape{
 	    //if not, we use the old Java object
 	    
 	    //whether new Landsacpe object or old, change the landscape now
-	    currentLS.changeQ(character);
+	    currentLS.changeQ(character, newFitness);
 	}
 	return currentLS;
     }
@@ -298,33 +299,41 @@ public class Landscape{
      * Change the landscape (ultimately, changing the Q matrix).  This is the where the 
      * computation of the new landscape takes place
      * @param character the current allele(index) - for allele-specific fitness change
-     * @return the new fitness vector
+     * @param newFtness new fitness vector specified by user; null if not specified      
      */
-    private double[] changeQ( byte character){
+    private void changeQ( byte character, double[] newFitness){
 
 	if (Model.debug()){
 	    System.out.println("old fitness:");
 	    System.out.println(java.util.Arrays.toString(fitness));
 	}
-	//choose how the new fitness is calculated
-	switch (Model.getNewFitnessRule()){
-	case IID:
-	    System.out.println("initial fitness: " + Model.getInitialFitnessDefinition());
-	    if (Model.getInitialFitnessDefinition() == InitialFitness.LOGNORM)
-		Fitness.logNormFitness(fitness, random);
-	    else if (Model.getInitialFitnessDefinition() == InitialFitness.GAMMA)
-		Fitness.gammaFitness(fitness, random);
-	    else
-		throw new InvalidParameterCombinationException(Model.getInitialFitnessDefinition() + " not compatible with iid new fitness rule");
-	    break;
-	case SHUFFLE:
-	    Fitness.shuffleFitness(fitness, random);
-	    break;
-	case CURRENT_ALLELE_DEPENDENT:
-	    Fitness.alleleAgeDependentDiscreteChange(fitness, character);
-	    break;
-	default:
-	    throw new UnsupportedOperationException("fitness update rule " + Model.getNewFitnessRule() + " not supported");
+	if (Model.getNewFitnessRule() == NewFitnessRule.USER_SET){
+	    if (newFitness != null){
+		fitness = Arrays.copyOf(newFitness, newFitness.length);
+	    } else{
+		throw new InvalidParameterCombinationException("new fitness is USER_SET but the vector is not given (or given incorrectly");
+	    }		
+	}else{
+	    //choose how the new fitness is calculated
+	    switch (Model.getNewFitnessRule()){
+	    case IID:
+		System.out.println("initial fitness: " + Model.getInitialFitnessDefinition());
+		if (Model.getInitialFitnessDefinition() == InitialFitness.LOGNORM)
+		    Fitness.logNormFitness(fitness, random);
+		else if (Model.getInitialFitnessDefinition() == InitialFitness.GAMMA)
+		    Fitness.gammaFitness(fitness, random);
+		else
+		    throw new InvalidParameterCombinationException(Model.getInitialFitnessDefinition() + " not compatible with iid new fitness rule");
+		break;
+	    case SHUFFLE:
+		Fitness.shuffleFitness(fitness, random);
+		break;
+	    case CURRENT_ALLELE_DEPENDENT:
+		Fitness.alleleAgeDependentDiscreteChange(fitness, character);
+		break;
+	    default:
+		throw new UnsupportedOperationException("fitness update rule " + Model.getNewFitnessRule() + " not supported");
+	    }
 	}
 	if (Model.debug()){
 	    System.out.println("new fitness:");
@@ -333,8 +342,6 @@ public class Landscape{
 	setQFromFitness(); //compute Q
 	computePi();
 	//	piComputed = false; //"clear" the cached pi value - we'd need to recompute it for new landscape
-	
-	return java.util.Arrays.copyOf(fitness, fitness.length);
     }
 
 
@@ -384,7 +391,7 @@ public class Landscape{
 	Fitness.logNormFitness(fitness,rand);
 	Landscape landscape = new Landscape( fitness,rand);
 	//	landscape.printParams();
-	landscape.changeQ((byte)0);
+	landscape.changeQ((byte)0, null);
 	//landscape.printParams();
     }
 }

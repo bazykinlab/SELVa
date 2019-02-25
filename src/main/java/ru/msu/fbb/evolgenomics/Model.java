@@ -2,6 +2,19 @@ import java.util.*;
 import java.io.*;
 import java.lang.reflect.*;
 /**
+ * class for storing info about time to change landscape and landscape to change to
+ */
+class ChangeTime{
+    public double time;
+    public double[] fitness;
+    public ChangeTime(double time, double[] fitness){
+	this.time=time;
+	this.fitness=fitness;
+    }
+}
+
+
+/**
  * The class for used to read and store the model parameters (provided in the config file).
  */
 public class Model{
@@ -19,6 +32,8 @@ public class Model{
     private static LandscapeChangeTiming landscapeChangeTiming;
     private static InitialFitness initialFitnessDefinition;
     private static double distParam = -1;
+    private static double alpha = -1;
+    private static double beta = -1;
     private static double landscapeChangeRate = 0;
     private static double landscapeChangeInterval = Double.POSITIVE_INFINITY;
     private static double landscapeChangeParameter;
@@ -28,8 +43,9 @@ public class Model{
     private static boolean qNormalization = true;
     private static boolean scaleLandscapeChangeToSubstitutionRate = false;
     private static double[] initialFitnessVectorFromFile; //the fitness vectore read from file
-
-    private static HashMap<String, Double> changeBranchAndTimes;
+    private static HashMap<String, double[]> position2fitness; //map a string encoding branch and position
+                                                               //to a fitness vector
+    private static HashMap<String, ChangeTime> changeBranchTimeFitness;
 
     public static void setLandscapeChangeRate( double r){ landscapeChangeRate = r;}
     public static void setLandscapeChangeInterval(double x){landscapeChangeInterval = x;}
@@ -38,6 +54,8 @@ public class Model{
 
     public static double getAlleleAgeDependenceCoef() {return ageDependenceCoef;}
     public static double getDistParam() { return distParam;  }
+    public static double getGammaAlpha() { return alpha;  }
+    public static double getGammaBeta() { return beta;  }
     public static String getFitnessFile() { return fitnessFile;}
     /* getters for the parameters that are always set */
     public static int getSequenceLength(){return sequenceLength;};
@@ -71,11 +89,24 @@ public class Model{
      */
     public static double getChangeTimeThisBranch(BasicNode node){
 	String nodeName = node.toString();
-	if (changeBranchAndTimes.containsKey(nodeName))
-	    return changeBranchAndTimes.get(nodeName);
+	if (changeBranchTimeFitness.containsKey(nodeName))
+	    return changeBranchTimeFitness.get(nodeName).time;
 	else
 	    return Double.NEGATIVE_INFINITY;
     }
+
+    /**
+     * @param node finishing the branch that is queries
+     * @return null if no change this branch,  new fitnessime till the end node otherwise (which itself might be null);
+     */
+    public static double[] getNewFitnessThisBranch(BasicNode node){
+	String nodeName = node.toString();
+	if (changeBranchTimeFitness.containsKey(nodeName))
+	    return changeBranchTimeFitness.get(nodeName).fitness;
+	else
+	    return null;
+    }
+
     //wrapper function that throws a slightly more informative exception when a parameter is missing (or misspelled)
     private static String getRequiredParameter(String parameter) throws MissingParameterException {
 	  String response = configValues.get(parameter);
@@ -86,16 +117,31 @@ public class Model{
       }
 
 
-    //get the String corresponding to the alphabet index array
-    public static String arr2seq(byte [] seqArr){
+    /**
+     * get the String corresponding to the alphabet index array
+     * @param seqArr - sequence as array of bytes
+     * @return corresponding sequence as a String
+     */
+     public static String arr2seq(byte [] seqArr){
 	String alphabet = getAlphabet();
 	char[] charArr = new char[seqArr.length];
 	for (int i = 0; i < seqArr.length; i++){
 	    charArr[i] = alphabet.charAt(seqArr[i]);
 	}
 	return new String (charArr);
-    }    
+    }
 
+    /**
+     * Return the fitness vector to change to at the provided branch and position (until the end of that branch)
+     * only works if LANDSCAPCE_CHANGE_TIMING is  specified_branch_and_time
+     */
+    public static double[] getFitnessForPosition(String branchName, double position){
+	if (landscapeChangeTiming != LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME)
+	    throw new
+		InvalidParameterCombinationException("getFitnessForPosition() only applicable if  LANDSCAPCE_CHANGE_TIMING is set to  specified_branch_and_time");
+	String key = branchAndTimeToKey(branchName, position);
+	return position2fitness.get(key);
+    }
 
     public static double[] getInitialFitnessFromFile(){
 	if (initialFitnessVectorFromFile == null)
@@ -125,12 +171,20 @@ public class Model{
 	    System.exit(-1);
 	}
     }
-
+    /**
+     * auxiliary function for converting branch name + time to key
+     */
+    public static String branchAndTimeToKey( String branch, double time){
+	return branch + " " + time;
+    }
+    
     /** Read the prespecified coordinates of landscape changes from a file
      * @param changeBranchAndTimeFileStr - name of the file with landscape change coordinates
      */
     private static void readChangeBranchAndTimeFile(String changeBranchAndTimeFileStr){
-	changeBranchAndTimes = new HashMap<String, Double> ();
+	//TODO: have to do sth about rounding issues with position
+
+	changeBranchTimeFitness = new HashMap<String, ChangeTime> ();
 	try{
 	    Scanner sc = new Scanner(new File(changeBranchAndTimeFileStr));
 	    
@@ -139,17 +193,31 @@ public class Model{
 		if (line.length() == 0 )
 		    continue;
 		String[] fields = line.split("\\s+");
-		if (fields.length!=2){
+		//either just branch + time, or branch + time + fitness vector
+		if (fields.length  !=  2 && fields.length != 2 + getAlphabetSize() ){
 		    System.err.println("error in change branch time file " + changeBranchAndTimeFileStr);
 		    System.err.println("line: " + line);
+		    System.exit(-1);
 		}
 		else{
 		    try{
 			String branch = fields[0];
 			double time = Double.parseDouble(fields[1]);
-			changeBranchAndTimes.put(branch, time);
-
-			System.out.println("add " + branch + " time");
+			double [] fitness = null;
+			//			System.out.println("add " + branch + " time");
+			
+			if ( fields.length == 2 + getAlphabetSize()){//the fitness is specified by the user
+			    //if haven't created the hashmap yet, do it 
+			    // if (position2fitness == null)
+			    // 	position2fitness = new HashMap<String, double[]>();
+			    fitness = new double[getAlphabetSize()];
+			    for (int i = 0; i < getAlphabetSize(); i++){
+				fitness[i] = Double.parseDouble(fields[2+i]);
+			    }
+			    String key = branchAndTimeToKey(branch, time);
+			    //			    position2fitness.put(key, fitness);
+			}
+			changeBranchTimeFitness.put(branch, new ChangeTime(time, fitness));
 		    }catch (NumberFormatException ne){
 			System.err.println("change branch time file " + changeBranchAndTimeFileStr + ": couldn't parse line " + line );
 			System.exit(-1);
@@ -252,7 +320,6 @@ public class Model{
 	    else{
 		String changeBranchAndTimeFileStr = configValues.get("CHANGE_BRANCH_AND_TIME_FILE");
 		readChangeBranchAndTimeFile(changeBranchAndTimeFileStr);
-		//TODO: this
 	    }
 
 	    if (landscapeChangeTiming==LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME &&
@@ -307,9 +374,19 @@ public class Model{
 		    throw new MissingParameterException ("AGE_DEPENDENCE_COEFFICIENT, required for allele-dependent fitness change");
 	    }
 
-	    if (initialFitnessDefinition == InitialFitness.GAMMA ||
-		initialFitnessDefinition == InitialFitness.LOGNORM){
+	    if (initialFitnessDefinition == InitialFitness.LOGNORM ){
 		distParam = Double.parseDouble(getRequiredParameter("DIST_PARAM"));
+	    } else if (initialFitnessDefinition == InitialFitness.GAMMA){
+		//		double alpha, beta;
+		String alphaStr = configValues.get("GAMMA_ALPHA");
+		String betaStr = configValues.get("GAMMA_BETA");
+		if (alphaStr == null || betaStr == null){
+		    alpha = Double.parseDouble(getRequiredParameter("DIST_PARAM"));
+		    beta = alpha;
+		}else{
+		    alpha = Double.parseDouble(alphaStr);
+		    beta = Double.parseDouble(betaStr);
+		}
 	    }
 	    if (initialFitnessDefinition == InitialFitness.FILE){
 		fitnessFile = getRequiredParameter("FITNESS_FILE");

@@ -270,21 +270,22 @@ public class EvolutionaryProcess implements Runnable{
      * @param nodeName name of the tree node on the branch to which the change occurs
      * @param branchLeft the branch time until that node
      * @param firstChangeInBranch is this the first time on this branch that the landscape changes?
+     * @param fitness new fitness vector specified by user for this branch; null if not specified      
      * @return the new landscape (may actually be the old Java object ls)
      */
-	private Landscape changeLandscape(Landscape ls, Seq seqStr, ChangeTracker changeTracker, String nodeName, double branchLeft, boolean firstChangeInBranch){
-
-	    //if this is the first time we change landscape on this branch,
-	    //we need to create a new landscape, so that sister branches won't be affected.
-	    ls = Landscape.getNewLandscape(ls, firstChangeInBranch, seqStr.seq[0]);
-	    //compute new changeRateVect based on the new landscape
-	    seqStr.computeChangeRateVect(ls);
-	    changeTracker.registerChange(nodeName, branchLeft, ls.getCopyOfFitness());
-	    if (Model.debug())
-		ls.printParams();
-
-	    return ls;
-	}
+    private Landscape changeLandscape(Landscape ls, Seq seqStr, ChangeTracker changeTracker, String nodeName, double branchLeft, boolean firstChangeInBranch, double[] newFitness){
+	
+	//if this is the first time we change landscape on this branch,
+	//we need to create a new landscape, so that sister branches won't be affected.
+	ls = Landscape.getNewLandscape(ls, firstChangeInBranch, seqStr.seq[0], newFitness);
+	//compute new changeRateVect based on the new landscape
+	seqStr.computeChangeRateVect(ls);
+	changeTracker.registerChange(nodeName, branchLeft, ls.getCopyOfFitness());
+	if (Model.debug())
+	    ls.printParams();
+	
+	return ls;
+    }
 
     /*** The simulation happens in the BFS order on the tree. Here's the infrastructure for it ***/
     
@@ -324,16 +325,18 @@ public class EvolutionaryProcess implements Runnable{
 		    Landscape localLS = bfsNode.inheritedLandscape;
 		    double branchLeft = (double)child.getLength(); //the length of the branch remaining
 		    int positionChanged = -1;
-
+		    
 		    //time until next deterministic landscape change left over from the parent node
 		    double timeTillDeterministicLandscapeChange = bfsNode.parentTimeTillDeterministicLandscapeChange;
 		    //if we want the change to take place at prespecified positions,
 		    //override this value (shd be 0) just for this branch
-
+		    double fitness[] = null;//new fitness to change to, if user-specified
+		    
 		    if (Model.changeAtSpecifiedBranchAndTime()){
 			//System.out.println("here");
 			
 		       	timeTillDeterministicLandscapeChange = (double)child.getLength() - Model.getChangeTimeThisBranch(child);
+			fitness = Model.getNewFitnessThisBranch(child);
 		    }
 		    
 		    System.out.println(child + ": time till next change: " + timeTillDeterministicLandscapeChange);
@@ -357,7 +360,7 @@ public class EvolutionaryProcess implements Runnable{
 			    //if the landscape hasn't changed before on this branch,
 			    //this is the first landscape change on this branch,
 			    //so we'll need a new landscape object
-			    localLS = changeLandscape(localLS, seqStr, changeTracker, child.toString(), branchLeft, !landscapeChangedThisBranch);
+			    localLS = changeLandscape(localLS, seqStr, changeTracker, child.toString(), branchLeft, !landscapeChangedThisBranch, fitness);
 			    landscapeChangedThisBranch = true;
 
 			    timeTillDeterministicLandscapeChange = Model.getLandscapeChangeInterval();
@@ -390,7 +393,7 @@ public class EvolutionaryProcess implements Runnable{
 				//if landscape hasn't changed yet on this branch,
 				//then this is the first change, so need new landscape
 				localLS = changeLandscape(localLS, seqStr, changeTracker, child.toString(),
-							  branchLeft, !landscapeChangedThisBranch);
+							  branchLeft, !landscapeChangedThisBranch, fitness);
 				landscapeChangedThisBranch = true;
 			    }
 			    //subtract the elapsed time from time till next landscape change

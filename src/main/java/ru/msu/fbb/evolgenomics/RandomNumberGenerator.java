@@ -13,6 +13,7 @@ public class RandomNumberGenerator{
     private double cache_exp_lambda=Double.NaN; //for caching the distribution object
     private GammaDistribution gammaDistribution;
     private double cache_gamma_a = Double.NaN; //for caching the distribution object
+    private double cache_gamma_b = Double.NaN; //for caching the distribution object
     private LogNormalDistribution logNormalDistribution;
     private double cache_lognorm_mean = Double.NaN;    //for caching the distribution object
     private double cache_lognorm_stdev = Double.NaN;
@@ -46,12 +47,13 @@ public class RandomNumberGenerator{
      * @param a alpha=beta
      * @return the sampled value
      */
-    public  double sampleGamma (double a)  {
-	if (gammaDistribution == null || cache_gamma_a != a){
+    public  double sampleGamma (double a, double b)  {
+	if (gammaDistribution == null || cache_gamma_a != a || cache_gamma_b != b){
 
 	    //the math3 library uses the shape-scale parametrization of gamma
-	    gammaDistribution = new GammaDistribution(randomNumberGenerator, a, 1.0/a, GammaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
+	    gammaDistribution = new GammaDistribution(randomNumberGenerator, a, 1.0/b, GammaDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
 	    cache_gamma_a = a;
+	    cache_gamma_b = b;
 	    // if (Model.debug())
 	    // 	System.out.println("new GammaDistribution object created with param " + a);
 	}
