@@ -31,7 +31,7 @@ public class Model{
     private static NewFitnessRule newFitnessRule;
     private static LandscapeChangeTiming landscapeChangeTiming;
     private static InitialFitness initialFitnessDefinition;
-    private static double distParam = -1;
+    private static double sigma = -1;
     private static double alpha = -1;
     private static double beta = -1;
     private static double landscapeChangeRate = 0;
@@ -53,7 +53,7 @@ public class Model{
     public static double getLandscapeChangeInterval(){return landscapeChangeInterval; }
 
     public static double getAlleleAgeDependenceCoef() {return ageDependenceCoef;}
-    public static double getDistParam() { return distParam;  }
+    public static double getSigma() { return sigma;  }
     public static double getGammaAlpha() { return alpha;  }
     public static double getGammaBeta() { return beta;  }
     public static String getFitnessFile() { return fitnessFile;}
@@ -112,6 +112,16 @@ public class Model{
 	  String response = configValues.get(parameter);
 	  if (response == null)
 	      throw new MissingParameterException(parameter);
+	  else
+	      return response;
+      }
+
+    //wrapper function that throws a slightly more informative exception when a parameter is missing (or misspelled)
+    //this version accomodates different names for the parameter that is changed and whose absence is reported
+    private static String getRequiredParameter(String parameter, String name4msg ) throws MissingParameterException {
+	  String response = configValues.get(parameter);
+	  if (response == null)
+	      throw new MissingParameterException(name4msg);
 	  else
 	      return response;
       }
@@ -374,14 +384,21 @@ public class Model{
 		    throw new MissingParameterException ("AGE_DEPENDENCE_COEFFICIENT, required for allele-dependent fitness change");
 	    }
 
+	    //in the following, we make some extra motions to support the legacy DIST_PARAM parameter that used to parametrize both distributions
 	    if (initialFitnessDefinition == InitialFitness.LOGNORM ){
-		distParam = Double.parseDouble(getRequiredParameter("DIST_PARAM"));
+		String sigmaStr = configValues.get("SIGMA");
+		if (sigmaStr == null){
+		    sigma = Double.parseDouble(getRequiredParameter("DIST_PARAM", "SIGMA"));
+		}else{
+		    sigma = Double.parseDouble(sigmaStr);
+		}
+		
 	    } else if (initialFitnessDefinition == InitialFitness.GAMMA){
 		//		double alpha, beta;
 		String alphaStr = configValues.get("GAMMA_ALPHA");
 		String betaStr = configValues.get("GAMMA_BETA");
 		if (alphaStr == null || betaStr == null){
-		    alpha = Double.parseDouble(getRequiredParameter("DIST_PARAM"));
+		    alpha = Double.parseDouble(getRequiredParameter("DIST_PARAM", "GAMMA_ALPHA and GAMMA_BETA"));
 		    beta = alpha;
 		}else{
 		    alpha = Double.parseDouble(alphaStr);

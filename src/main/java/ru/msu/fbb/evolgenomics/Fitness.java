@@ -47,8 +47,8 @@ public class Fitness{
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */
     public static void logNormFitness(double[] fitness, RandomNumberGenerator random){
-	double DIST_PARAM = Model.getDistParam();
-	logNormFitness(fitness, 0, DIST_PARAM, random);
+	double SIGMA = Model.getSigma();
+	logNormFitness(fitness, 0, SIGMA, random);
     }
     /**
      * Fill the fitness vector with all 1's
