@@ -21,8 +21,8 @@ PRINT_LANDSCAPE_INFO true
 
 #INITIAL_FITNESS: {lognorm, gamma, file}
 #if "file", specify FITNESS_FILE
-#if "lognorm", specify DIST_PARAM=sigma (mu is set to be 0)
-#if "gamma", specify DIST_PARAM=alpha (beta is set to be alpha, as is done by Yang)
+#if "lognorm", specify SIGMA (mu is set to be 0)
+#if "gamma", specify GAMMA_ALPHA and GAMMA_BETA (beta is set to be alpha, as is done by Yang)
 
 INITIAL_FITNESS file
 
@@ -30,7 +30,7 @@ INITIAL_FITNESS file
 FITNESS_FILE fitness_20aa_1_0.1.txt
 
 # The parameter governing the landsacape probability distribution (if used)
-DIST_PARAM 1
+#SIGMAM 1.0
 
 #how do we change the fitness?  
 #we could sample it from the same distribution as initial fitness (iid), 
