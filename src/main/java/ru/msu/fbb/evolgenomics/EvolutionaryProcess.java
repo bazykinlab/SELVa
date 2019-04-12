@@ -339,7 +339,6 @@ public class EvolutionaryProcess implements Runnable{
 			fitness = Model.getNewFitnessThisBranch(child);
 		    }
 		    
-		    System.out.println(child + ": time till next change: " + timeTillDeterministicLandscapeChange);
 		    
 		    while (branchLeft > 0){//this condition will always be true, i think
 			//get the time till next stochastic event
