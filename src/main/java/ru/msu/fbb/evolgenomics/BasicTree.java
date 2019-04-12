@@ -33,6 +33,11 @@ public class BasicTree{
     public double getTreeHeight(){return root.getLongestPathDown();}
 
     /**
+     * @return the sum of tree brnches height
+     */
+    public double getTreeVolume(){return root.getSubtreeVolume();}
+
+    /**
      * @return the names of all tree nodes (internal and leaves)
      */
     public Set<String> getNodeNames(){return name2node.keySet();}
@@ -87,6 +92,7 @@ public class BasicTree{
 	BasicNode myNode = new BasicNode(tjNode.getName(), myParent, tjNode.getWeight(), numChildren);
 	name2node.put(tjNode.getName(), myNode);
 	double longestPathDown = 0;
+	double volume = 0;
 	for (int i = 0; i < numChildren; i++) {
 	    TreeNode tjChild = tjNode.getChild(i);
 	    BasicNode child = buildTreeFromParserRec(tjTree, tjChild, myNode);
@@ -94,18 +100,22 @@ public class BasicTree{
 	    double pathDownThroughChild = child.getLength() + child.getLongestPathDown();
 	    if (pathDownThroughChild > longestPathDown)
 		longestPathDown = pathDownThroughChild;
+	    volume += child.getLength() + child.getSubtreeVolume();
 	}
 	
 	if (numChildren == 0){
 	    leaves.add(myNode);
 	}else{
 	    myNode.setLongestPathDown(longestPathDown);
+	    myNode.setSubtreeVolume(volume);
 	}
 	return myNode;
     }
 
     public void print(){
 	System.out.println("the tree has: " + getNumNodes() + " nodes");
+	System.out.println("tree height is: " + getTreeHeight());
+	System.out.println("tree volume is: " + getTreeVolume());
 	System.out.println("they are: " + getNodes()); 
 	System.out.println("their names are: " + getNodeNames());
 	printTree(root);
@@ -118,9 +128,10 @@ public class BasicTree{
      * recursive printing function
      * @param root root of the subtree to print
      */
-    private  void printTree(BasicNode root){
+    private void printTree(BasicNode root){
 	System.out.println("this is:" + root + " at depth " + root.getDepth() +
-			   " and \"height\": " + root.getLongestPathDown());
+			   " and \"height\": " + root.getLongestPathDown() +
+			   "and \"volume\": " + root.getSubtreeVolume());
 	System.out.println("its children are: ");
 	List<BasicNode > children = root.getChildren();
 	for (BasicNode child : children){
@@ -136,5 +147,4 @@ public class BasicTree{
 	BasicTree tree = new BasicTree(args[0]);
 	tree.print();
     }
-
 }

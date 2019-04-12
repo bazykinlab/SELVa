@@ -128,7 +128,7 @@ public class Selva {
                 changeTimeWriter.close();
             }
             endTime = (double) System.currentTimeMillis();
-	    System.err.printf("entire computation took %.5f seconds\n", (endTime-startTime)/1000.0);
+	    //	    System.err.printf("entire computation took %.5f seconds\n", (endTime-startTime)/1000.0);
 	    System.out.printf("entire computation took %.5f seconds\n", (endTime-startTime)/1000.0);
 	}catch(Exception e){
 	    System.err.println(e);

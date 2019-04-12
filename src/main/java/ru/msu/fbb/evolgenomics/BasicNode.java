@@ -14,6 +14,8 @@ public class BasicNode{
     private double depth ;  //longest from node path to beginning
     private double depthFromRoot ;  //longest from node path to root
     private double longestPathDown; //longest path from node to its furtherst leaf descendant
+    private double subtreeVolume; //sum of brnches of subtree rooted at this node
+    
     /**
      * @return the node name
      */
@@ -85,5 +87,19 @@ public class BasicNode{
      * @param len length of the longest path
      */
     public void setLongestPathDown(double len){longestPathDown = len;}
+
+
+    /**
+     * @return sum of branches of the subtree rooted at this node
+     */
+    public double getSubtreeVolume(){return subtreeVolume;}
+
+    /**
+     * Sets the sum of the branches of the subtree rooted at this node
+     * @param subtree "volume"
+     */
+    public void setSubtreeVolume(double vol){subtreeVolume = vol;}
+
     public String toString (){ return name;}
+
 }
