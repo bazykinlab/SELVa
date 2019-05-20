@@ -20,7 +20,7 @@ To run the simulator, open the command line prompt, go to the directory where th
 
 `% java –jar Selva.jar config.txt`
 
-Currently, the jar is built using Java 1.7, so you have to have the corresponding JDK on your system.
+Currently, the jar is built using Java 1.8, so you have to have the corresponding JRE on your system.
 
 ### Getting started
 The `example` directory has some sample files to get you started
