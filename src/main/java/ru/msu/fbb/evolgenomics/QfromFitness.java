@@ -1,4 +1,9 @@
 import org.apache.commons.math3.linear.*;
+// import org.ejml.simple.*;
+// import org.ejml.data.*;
+// import org.ejml.interfaces.linsol.*;
+// import org.ejml.dense.row.factory.*;
+// import org.ejml.dense.row.*;
 
 /**
  * Class for generating the matrix Q and the stationary distribution pi 
@@ -31,6 +36,7 @@ public class QfromFitness{
 			Q[i][j] = diff/(double)(1-Math.exp(-diff));
 		    else
 			Q[i][j] = 1;
+		    Q[i][j] *= Model.getMutationRate(i, j);
 		    rowsums[i]+=Q[i][j];
 		}
 	    }
@@ -50,6 +56,9 @@ public class QfromFitness{
      * @return stationary distribution pi
      */
     public static double[]  PiFromFitness (double[] fitness) {
+	if (Model.debug()){
+	    System.out.println("PiFromFitness");
+	}
 	double[] expVect = new double[fitness.length];
 	for (int i = 0; i < fitness.length; i++){
 	    expVect[i] = Math.exp(fitness[i]);
@@ -60,12 +69,57 @@ public class QfromFitness{
 
     /** 
      * Generates the stationary probability vector pi from Q
-     * 
+     *
      * @param Q the matrix Q
      *
      * @return stationary distribution pi
      */
-     public static double []  PiFromQ (double[][] Q) {
+
+    public static double[]  PiFromQ (double[][] Q) {
+    	/* we want to solve the following system of equations:
+	   \forall j \Sum_i{pij*q_ij} = 0, or pi * Q = [0,0,..,0] //Yang formula 1.56
+	   \Sum pi = 1;
+	   we can add the last equation to every row of the first to get:
+	   \forall j \Sum_i{pi*(q_ij+1} = 1
+	   equivalently
+	   pi*(Q+1) = [1,1,...,1]
+	   where Q+1 is the elementwise sum of Q and a matrix of all ones
+	*/
+	if (Model.debug()){
+	    System.out.println("PiFromQ");
+	}
+	RealMatrix Qmat = new Array2DRowRealMatrix(Q);
+	
+	//create a 2D matrix of all ones and a 1D vector of all ones
+	RealMatrix ones2D = new Array2DRowRealMatrix(Q.length,Q.length);
+	double[] ones1Darr = new double[Q.length];//SimpleMatrix ones1D = new SimpleMatrix(Q.length, 1);
+	for (int i = 0; i < Q.length; i++){
+	    //	    ones1D.set(i, 0, 1.0);
+	    ones1Darr[i] = 1.0;
+	    for (int j = 0; j < Q.length; j++)
+		ones2D.setEntry(i,j, 1.0);
+	}
+
+	//add the 2D all ones matrix elementwise to Q
+	
+	RealMatrix Qplus1 = Qmat.add(ones2D);
+	double[] piArr = MatrixUtils.inverse(Qplus1).preMultiply(ones1Darr);
+	//	double[] piArr = new double[Q.length];
+	//	for (int i = 0; i < Q.length; i++){
+	//	    piArr[i] = pimat.getEntry(i);
+	//	}
+	return piArr;
+    }
+
+    /** 
+     * Generates the stationary probability vector pi from Q
+     * @deprecated
+     * Replaced with PiFromQ which uses fewer operations
+     * @param Q the matrix Q
+     *
+     * @return stationary distribution pi
+     */
+     private static double []  PiFromQOld (double[][] Q) {
     	/* we want to solve the following system of equations:
           \forall j \Sum_i{pij*q_ij} = 0, or pi * Q = [0,0,..,0] //Yang formula 1.56
           \Sum pi = 1;
@@ -104,6 +158,7 @@ public class QfromFitness{
     	    pi[i] = (double) pidouble[i];
     	return pi;
     }
+
     public static void main (String[] args){
 	int ALPHABET_SIZE = 2;
 	double [] F = new double[ALPHABET_SIZE];

@@ -128,6 +128,19 @@ public class EvolutionaryProcess implements Runnable{
 	    computeChangeRateVect(landscape);
 	}
 	/**
+	 * Create a new Seq structure for sequence of length seqLength and initialize it
+	 * according to the stationary distribution of the given landscape
+	 * @param userSuppliedSeq is the byte array representing the root sequence (as indices into ALPHABET)
+	 * @param landsacpe current fitness landscape (for computing the change rate vector)
+	 */
+	public Seq (byte[] userSuppliedSeq, Landscape landscape){
+	    seqLength = userSuppliedSeq.length;
+	    this.seq = userSuppliedSeq;
+	    changeRateVect = new double[seqLength+1];
+	    computeChangeRateVect(landscape);			
+	}
+
+	/**
 	 * Create a new Seq structure by cloning another one
 	 * @param orig Seq structure to clone
 	 */
@@ -445,8 +458,17 @@ public class EvolutionaryProcess implements Runnable{
 	}else //if landscape change timing is stochastic, set the deterministic interval to infinity
 	    landscapeChangeTime = Double.POSITIVE_INFINITY;
 
-	//generate the root sequence and add it to the node2seq map
-	Seq rootSeqStr = new Seq(seqLength, landscape);
+	//if the user provided a root sequence file, use the root sequence from there
+	//otherwise, generte generate the root sequence from the root stationary vector
+	//in either case,  add the root sequence to the node2seq map
+	byte[] rootSeqArr = Model.getRootSequenceFromFile();
+	Seq rootSeqStr;
+	if (rootSeqArr == null)
+	    rootSeqStr= new Seq(seqLength, landscape);
+	else
+	    rootSeqStr= new Seq(rootSeqArr, landscape);
+
+	    
 	node2seq.put(tree.getRoot(), rootSeqStr.seq);
 	if (Model.collectStats())
 	    SubstitutionAnalyzer.init(tree, seqLength);

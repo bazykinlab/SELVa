@@ -11,6 +11,9 @@ class ChangeTime{
 	this.time=time;
 	this.fitness=fitness;
     }
+    public String toString(){
+	return time + ": " + java.util.Arrays.toString(fitness);
+    }
 }
 
 
@@ -31,6 +34,7 @@ public class Model{
     private static NewFitnessRule newFitnessRule;
     private static LandscapeChangeTiming landscapeChangeTiming;
     private static InitialFitness initialFitnessDefinition;
+    private static byte[] rootSequence;
     private static double sigma = -1;
     private static double alpha = -1;
     private static double beta = -1;
@@ -43,10 +47,17 @@ public class Model{
     private static boolean qNormalization = true;
     private static boolean scaleLandscapeChangeToSubstitutionRate = false;
     private static double[] initialFitnessVectorFromFile; //the fitness vectore read from file
+    private static double[][] mutationRateMatrix; // mutation rate matrix (set to all 1's by default
     private static HashMap<String, double[]> position2fitness; //map a string encoding branch and position
                                                                //to a fitness vector
     private static HashMap<String, ChangeTime> changeBranchTimeFitness;
 
+    /** 
+     * @return the user-specified root sequence, encoded as indices of the ALPHABET string, or null if it is not provided
+     * in the latter case, the root sequence will be generated from the root landscape's stationary distribution
+     */
+    public static byte[] getRootSequenceFromFile(){ return rootSequence;  }
+    
     public static void setLandscapeChangeRate( double r){ landscapeChangeRate = r;}
     public static void setLandscapeChangeInterval(double x){landscapeChangeInterval = x;}
     public static double getLandscapeChangeRate() {return landscapeChangeRate;}
@@ -57,6 +68,7 @@ public class Model{
     public static double getGammaAlpha() { return alpha;  }
     public static double getGammaBeta() { return beta;  }
     public static String getFitnessFile() { return fitnessFile;}
+    public static boolean isMutationRateMatrixDefined(){return mutationRateMatrix!=null;}
     /* getters for the parameters that are always set */
     public static int getSequenceLength(){return sequenceLength;};
     public static int getNumRuns(){return numInstances;}
@@ -181,6 +193,93 @@ public class Model{
 	    System.exit(-1);
 	}
     }
+
+    private static void readRootSequence(){
+	String rootSeqFile = configValues.get("ROOT_SEQUENCE_FILE");
+	if (rootSeqFile != null){
+	    try{
+		rootSequence = new byte[sequenceLength];
+	
+		String rootSeq = "";
+		boolean first = true;
+		Scanner sc = new Scanner(new File(rootSeqFile));
+		while(sc.hasNext()){
+		    String nextLine = sc.next();
+		    //accomodate fasta format
+		    if (nextLine.charAt(0)== '>')
+			if (first)
+			    continue;
+			else
+			    break;
+		    first = false;//fasta header
+		    rootSeq += nextLine;
+		}
+		System.out.println("rootSeq: " + rootSeq);
+		//check that the root sequence belongs to the closure of the alphabet
+		if (rootSeq.length() < sequenceLength)
+			throw new IllegalArgumentException("The provided root sequence is shorter ("+ rootSeq.length() + ") than the given sequence Length ("+sequenceLength+").");
+		for (int i = 0; i < sequenceLength; i++){
+		    int index = alphabet.indexOf(rootSeq.charAt(i));
+		    if (index== -1){
+		    throw new IllegalArgumentException("The provided root sequence contains non-alphabet character: " + rootSeq.charAt(i));
+		    }else{
+			rootSequence[i] = (byte)index;
+		    }
+		}
+	    }
+	    catch(FileNotFoundException e){
+		System.err.println("Error: cannot open the root sequence file " + rootSeqFile);
+		System.exit(-1);
+	    }
+	}
+    }
+
+    /**
+     * return the mutation rate from character indexed i to character indexed j
+     * if mutation rate matrix has not been provided (is null), return 1.0
+     * @param i, j - indices of the characters of interest
+     * @return mutation rate from character i to character j
+     */
+
+    public static double getMutationRate(int i, int j){
+	if (mutationRateMatrix == null)
+	    return 1.0;
+	else
+	    return mutationRateMatrix[i][j];
+    }
+
+    /**
+     * read the mutation rate matrix from file, if it is provided in the config file
+     */
+    public static void readMutationRateMatrix(){
+	int alphabetLength = alphabet.length();
+
+	String filename = configValues.get("MUTATION_RATE_MATRIX_FILE");
+
+	if (filename != null){
+	    mutationRateMatrix = new double[alphabetLength][alphabetLength];
+	
+	    try{
+		Scanner sc = new Scanner(new File(filename));
+		for (int i = 0; i < alphabetLength; i++)
+		    for (int j = 0; j < alphabetLength; j++)
+			mutationRateMatrix[i][j] = sc.nextDouble();
+		sc.close();
+	    }catch(FileNotFoundException e){
+		System.err.println("Error: cannot open the mutation rate matrix file " + filename);
+		System.exit(-1);
+	    }catch(InputMismatchException e){
+		System.err.println("Error: non-numeric value in your mutation rate file");
+		System.exit(-1);
+	    }
+	    catch(NoSuchElementException e){
+		System.err.println("Error: mutation rate matrix dimension seems to be shorter than the alphabet");
+		System.exit(-1);
+	    }
+	    
+	}
+    }
+    
     /**
      * auxiliary function for converting branch name + time to key
      */
@@ -247,8 +346,27 @@ public class Model{
 	    for (Field f : c.getDeclaredFields()){
 		String name = f.getName();
 		if (!name.equals("debug") && !name.equals("configValues")
-		    && !name.equals("initialFitnessVectorFromFile"))
+		    && !name.equals("initialFitnessVectorFromFile")
+		    && !name.equals("rootSequence")
+		    && !name.equals("initialFitnessVectorFromFile")
+		    && !name.equals("changeBranchTimeFitness"))
 		    System.out.println(name + " : " + f.get(null));
+	    }
+	    if (changeBranchTimeFitness != null){
+		System.out.println("changeBranchTimeFitness :");
+		for (Map.Entry<String, ChangeTime> entries : changeBranchTimeFitness.entrySet()){
+		    System.out.println("\t" + entries.getKey() + " : " + entries.getValue());
+		}
+	    }
+	    System.out.println("initialFitnessVectorFromFile : " + java.util.Arrays.toString(initialFitnessVectorFromFile));
+	    System.out.println("rootSequence (as indices of ALPHABET) : " + java.util.Arrays.toString(rootSequence));
+	    System.out.print("mutationRateMatrix : ");
+	    if (mutationRateMatrix == null)
+		System.out.println("null");
+	    else{
+		System.out.println("");
+		for (double[] arr : mutationRateMatrix)
+		    System.out.println(java.util.Arrays.toString(arr));
 	    }
 	}catch(Exception e){
 	    e.printStackTrace();
@@ -291,6 +409,9 @@ public class Model{
 	    
 	    alphabet = getRequiredParameter("ALPHABET");
 	    treeFile = getRequiredParameter("TREE_FILE");
+
+	    readRootSequence();
+	    readMutationRateMatrix();
 	    
 	    String numRunsStr = configValues.get("NUM_INSTANCES");
 	    if (numRunsStr == null)
@@ -331,7 +452,7 @@ public class Model{
 		String changeBranchAndTimeFileStr = configValues.get("CHANGE_BRANCH_AND_TIME_FILE");
 		readChangeBranchAndTimeFile(changeBranchAndTimeFileStr);
 	    }
-
+	    
 	    if (landscapeChangeTiming==LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME &&
 		sharedLandscape == true)
 		throw new InvalidParameterCombinationException("Can't have shared landscape and specified branch and time of change");

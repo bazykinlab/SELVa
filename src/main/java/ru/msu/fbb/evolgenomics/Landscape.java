@@ -246,10 +246,14 @@ public class Landscape{
 	normalizeQ();
     }
     /**
-     * Compute pi from the fitness vector
+     * Compute pi; if the user-supplied a mutation rate matrix, it is computed from Q; 
+     * otherwise, it is computed from the fitness vector directly
      */
     private void computePi(){
-	pi = QfromFitness.PiFromFitness(fitness);
+	if (Model.isMutationRateMatrixDefined())
+	    pi = QfromFitness.PiFromQ(Q);
+	else
+	    pi = QfromFitness.PiFromFitness(fitness);
 	//	piComputed = true;
     }
 
