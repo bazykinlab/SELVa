@@ -24,9 +24,13 @@ Currently, the jar is built using Java 1.8, so you have to have the correspondin
 
 ### Getting started
 We provide some usage examples
+
 example_useset: an example of specifying many parameters of the simulation by hand
+
 example_stochastic: an example of stochastic landscape change with randomly sampled landscapes
+
 example_age: an example of the current allele's fitness increasing with time (age)
+
 
 In each case, the .fasta files are example of output.  In the stochastic case, they will be different for every simulation.
 
