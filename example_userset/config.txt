@@ -1,0 +1,34 @@
+ALPHABET  ACGT
+
+LENGTH 5 
+
+NUM_INSTANCES 1
+
+ROOT_SEQUENCE_FILE rootseq.txt
+
+MUTATION_RATE_MATRIX_FILE mutation_rates.txt
+
+TREE_FILE simple.tre
+
+NUM_THREADS 1
+
+PRINT_LANDSCAPE_INFO true
+
+INITIAL_FITNESS file
+
+FITNESS_FILE fitness_1_0.1.txt
+
+NEW_FITNESS_RULE user_set
+
+LANDSCAPE_CHANGE_TIMING specified_branch_and_time
+
+CHANGE_BRANCH_AND_TIME_FILE change_branch_time.txt
+
+
+##### Advanced options #####
+#Do we make the substitution rate constant (equal to tree branch length unit)?
+
+CONSTANT_RATE true
+
+#If the substitution rate is not constant, do we scale the landscape change rate to it?
+SCALE_LANDSCAPE_CHANGE_TO_SUBSTITUTION_RATE true
