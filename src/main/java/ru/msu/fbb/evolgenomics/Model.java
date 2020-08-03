@@ -214,7 +214,7 @@ public class Model{
 		    first = false;//fasta header
 		    rootSeq += nextLine;
 		}
-		System.out.println("rootSeq: " + rootSeq);
+
 		//check that the root sequence belongs to the closure of the alphabet
 		if (rootSeq.length() < sequenceLength)
 			throw new IllegalArgumentException("The provided root sequence is shorter ("+ rootSeq.length() + ") than the given sequence Length ("+sequenceLength+").");
@@ -313,18 +313,15 @@ public class Model{
 			String branch = fields[0];
 			double time = Double.parseDouble(fields[1]);
 			double [] fitness = null;
-			//			System.out.println("add " + branch + " time");
 			
 			if ( fields.length == 2 + getAlphabetSize()){//the fitness is specified by the user
-			    //if haven't created the hashmap yet, do it 
-			    // if (position2fitness == null)
-			    // 	position2fitness = new HashMap<String, double[]>();
+
 			    fitness = new double[getAlphabetSize()];
 			    for (int i = 0; i < getAlphabetSize(); i++){
 				fitness[i] = Double.parseDouble(fields[2+i]);
 			    }
 			    String key = branchAndTimeToKey(branch, time);
-			    //			    position2fitness.put(key, fitness);
+
 			}
 			changeBranchTimeFitness.put(branch, new ChangeTime(time, fitness));
 		    }catch (NumberFormatException ne){

@@ -14,7 +14,6 @@ public class Fitness{
      */
     public static void gammaFitness(double[] fitness, double alpha, double beta,
 				    RandomNumberGenerator random){
-	//	System.out.println("gamma");
 	for (int i = 0; i < fitness.length; i++)
 	    fitness[i] = random.sampleGamma(alpha, beta);
     }
@@ -67,19 +66,6 @@ public class Fitness{
 				      RandomNumberGenerator random){
 	
 	random.shuffleArray(fitness);
-	//	int shuffleCount = 0;
-	
-	//	if (!Utils.allElementsEqual(fitness)){ //don't try to shuffle flat array
-	
-	//  double[] fitnessOld = java.util.Arrays.copyOf(fitness, fitness.length);
-	//	    do{
-	// random.shuffleArray(fitness);
-	//	shuffleCount++;
-	//	    }while(java.util.Arrays.equals(fitness, fitnessOld));
-	
-	//}
-	// if (Model.debug())
-	//     System.out.println(shuffleCount + " shuffles");	
     }
     
     /**
@@ -93,6 +79,7 @@ public class Fitness{
 	double sum = 0.0;	    
 	double kt = Model.getLandscapeChangeInterval() * Model.getAlleleAgeDependenceCoef();
 	fitness[character] += kt;
-	System.out.println("increase fitness of allele " + character + " by " + kt);
+	if (Model.debug())
+	    System.out.println("increase fitness of allele " + character + " by " + kt);
     }
 }

@@ -346,7 +346,6 @@ public class EvolutionaryProcess implements Runnable{
 		    double fitness[] = null;//new fitness to change to, if user-specified
 		    
 		    if (Model.changeAtSpecifiedBranchAndTime()){
-			//System.out.println("here");
 			
 		       	timeTillDeterministicLandscapeChange = (double)child.getLength() - Model.getChangeTimeThisBranch(child);
 			fitness = Model.getNewFitnessThisBranch(child);
@@ -366,7 +365,6 @@ public class EvolutionaryProcess implements Runnable{
 			    
 			    if (Model.debug()){
 				System.out.println(id + ": change landscape deterministically at time "+ branchLeft +" before " + child + " whose depth is " + child.getDepth());
-				//				System.out.println("seq: " + java.util.Arrays.toString(seqStr.seq));
 			    }
 
 			    //if the landscape hasn't changed before on this branch,

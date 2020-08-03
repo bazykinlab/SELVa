@@ -321,7 +321,8 @@ public class Landscape{
 	    //choose how the new fitness is calculated
 	    switch (Model.getNewFitnessRule()){
 	    case IID:
-		System.out.println("initial fitness: " + Model.getInitialFitnessDefinition());
+		if (Model.debug())
+		    System.out.println("initial fitness: " + Model.getInitialFitnessDefinition());
 		if (Model.getInitialFitnessDefinition() == InitialFitness.LOGNORM)
 		    Fitness.logNormFitness(fitness, random);
 		else if (Model.getInitialFitnessDefinition() == InitialFitness.GAMMA)
