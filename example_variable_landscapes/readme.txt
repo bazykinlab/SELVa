@@ -1,0 +1,1 @@
+This is an example of simulating three landscapes that are each governed by their separate sets of rules.  The first landscape governs the first 4 characters of the sequence in rootseq.txt; the second landscape governs the next 2, and the third landscape governs the last one.
