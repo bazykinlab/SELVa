@@ -28,7 +28,7 @@ public class EvolutionaryProcess implements Runnable{
 	 * user chooses to save and print fitness change info
 	 */
 	public ChangeTracker(){
-	    if (Model.printFitnessInfo())       
+	    if (Parameters.printFitnessInfo())       
 		branch2changes = new HashMap<String, ChangeStruct> ();
 	}
 	
@@ -40,7 +40,7 @@ public class EvolutionaryProcess implements Runnable{
 	 */
 	void registerChange(String branchName, double time, double[] fitness){
 	    count++;
-	    if (!Model.printFitnessInfo())
+	    if (!Parameters.printFitnessInfo())
 		return;
 	    ChangeStruct str =  branch2changes.get(branchName);
 	    if (str == null){
@@ -56,7 +56,7 @@ public class EvolutionaryProcess implements Runnable{
 	 * @return the changetimes encoded as string (inside []) or null if this info is not requested
 	 */
 	public String getChangeTimes(String nodeName){
-	    if (!Model.printFitnessInfo()) 
+	    if (!Parameters.printFitnessInfo()) 
 		return null;
 	    ChangeStruct cs  = branch2changes.get(nodeName);
 	    if (cs == null)
@@ -71,14 +71,14 @@ public class EvolutionaryProcess implements Runnable{
 	 * Returns null if this info is not requested
 	 */
 	public String  getFitnesses(String nodeName){
-	    if (!Model.printFitnessInfo()) 
+	    if (!Parameters.printFitnessInfo()) 
 		return null;
 	    ChangeStruct cs  = branch2changes.get(nodeName);
 	    if (cs == null)
 		return "{}";
 	else{
 	    ArrayList<double[]> arr = cs.fitnesses;
-	    StringBuilder str = new StringBuilder(arr.size() * Model.getAlphabetSize()* 10);
+	    StringBuilder str = new StringBuilder(arr.size() * Parameters.getAlphabetSize()* 10);
 	    str.append('{');
 	    for (double[] fitness : arr){
 		str.append(Arrays.toString(fitness) +":");
@@ -165,9 +165,9 @@ public class EvolutionaryProcess implements Runnable{
 		changeRateVect[i] = -landscape.Qat(curChar,curChar);
 		sumRates += -landscape.Qat(curChar,curChar);
 	    }
-	    if (Model.getLandscapeChangeTiming() == LandscapeChangeTiming.STOCHASTIC){
-		changeRateVect[seq.length] = Model.getLandscapeChangeRate();	 
-		if (Model.scaleLandscapeChangeToSubstitutionRate()) 
+	    if (model.getLandscapeChangeTiming() == LandscapeChangeTiming.STOCHASTIC){
+		changeRateVect[seq.length] = model.getLandscapeChangeRate();	 
+		if (Parameters.scaleLandscapeChangeToSubstitutionRate()) 
 		    changeRateVect[seq.length] *= landscape.getDiagQtimesPi();
 	    }else
 		changeRateVect[seq.length] = 0; //for deterministic change
@@ -239,6 +239,7 @@ public class EvolutionaryProcess implements Runnable{
     private int seqLength; 
     int id; //process id
     private RandomNumberGenerator random; //this evolutionary process's separate RNG
+    private Model model;
     
     /**
      * Create a new EvolutionaryProcess 
@@ -246,11 +247,12 @@ public class EvolutionaryProcess implements Runnable{
      * @param seqLength the sequence length
      * @param id the process id
      */
-    public EvolutionaryProcess (BasicTree tree, int seqLength, int id){
+    public EvolutionaryProcess (BasicTree tree,  Model model, int id){
 	this.id = id;
 	this.tree = tree;
 	node2seq = new HashMap<BasicNode, byte[]>(tree.getNumNodes());
-	this.seqLength = seqLength;
+	this.model = model;
+	this.seqLength = model.getSequenceLength();
 	
     }
     /**
@@ -294,7 +296,7 @@ public class EvolutionaryProcess implements Runnable{
 	//compute new changeRateVect based on the new landscape
 	seqStr.computeChangeRateVect(ls);
 	changeTracker.registerChange(nodeName, branchLeft, ls.getCopyOfFitness());
-	if (Model.debug())
+	if (Parameters.debug())
 	    ls.printParams();
 	
 	return ls;
@@ -328,7 +330,6 @@ public class EvolutionaryProcess implements Runnable{
 	while (!queue.isEmpty()) {
             BFSNode bfsNode = queue.remove();
 	    try{ //just to catch and trace our mess-up runtime exceptions
-
 		List<BasicNode > children = bfsNode.node.getChildren(); //get the tree node's children
 		//go down each branch
 		for (BasicNode child : children){
@@ -345,10 +346,10 @@ public class EvolutionaryProcess implements Runnable{
 		    //override this value (shd be 0) just for this branch
 		    double fitness[] = null;//new fitness to change to, if user-specified
 		    
-		    if (Model.changeAtSpecifiedBranchAndTime()){
+		    if (model.changeAtSpecifiedBranchAndTime()){
 			
-		       	timeTillDeterministicLandscapeChange = (double)child.getLength() - Model.getChangeTimeThisBranch(child);
-			fitness = Model.getNewFitnessThisBranch(child);
+		       	timeTillDeterministicLandscapeChange = (double)child.getLength() - model.getChangeTimeThisBranch(child);
+			fitness = model.getNewFitnessThisBranch(child);
 		    }
 		    
 		    
@@ -363,7 +364,7 @@ public class EvolutionaryProcess implements Runnable{
 			    
 			    branchLeft -= timeTillDeterministicLandscapeChange;
 			    
-			    if (Model.debug()){
+			    if (Parameters.debug()){
 				System.out.println(id + ": change landscape deterministically at time "+ branchLeft +" before " + child + " whose depth is " + child.getDepth());
 			    }
 
@@ -373,7 +374,7 @@ public class EvolutionaryProcess implements Runnable{
 			    localLS = changeLandscape(localLS, seqStr, changeTracker, child.toString(), branchLeft, !landscapeChangedThisBranch, fitness);
 			    landscapeChangedThisBranch = true;
 
-			    timeTillDeterministicLandscapeChange = Model.getLandscapeChangeInterval();
+			    timeTillDeterministicLandscapeChange = model.getLandscapeChangeInterval();
 
 			}else if (timeTillNextStochasticEvent < branchLeft  ){
 			   //now consider the case that the next event is stochastic
@@ -388,15 +389,15 @@ public class EvolutionaryProcess implements Runnable{
 
 			    if (whichEvent < seqStr.seqLength){//the next event changes the sequence	          
 				positionChanged = whichEvent;
-				if (Model.collectStats())
+				if (Parameters.collectStats())
 				    System.out.println("### " + child + "\t" + branchLeft);
 				
 				seqStr.updateSeq( whichEvent, localLS);
-				if (Model.collectStats())
+				if (Parameters.collectStats())
 				    SubstitutionAnalyzer.registerSubstitution(child.toString(), whichEvent);
 				
 			    }else{//the next event is probabilistic landscape change 
-				if (Model.debug()){
+				if (Parameters.debug()){
 				    System.out.println(id + ": change landscape probabilistically at time "+ branchLeft +" before " + child.toString());
 				    System.out.println("seqStr: " + seqStr);
 				}
@@ -438,11 +439,11 @@ public class EvolutionaryProcess implements Runnable{
 	random = new RandomNumberGenerator();
 
 	//here we need to create the first landscape
-	Landscape landscape = new Landscape(random);
+	Landscape landscape = new Landscape(random, model);
         changeTracker = new ChangeTracker();
 
 	
-	if (Model.debug()){
+	if (Parameters.debug()){
 	    landscape.printParams();
 	}
         //record the starting landscape as taking place at time 0 before the root
@@ -450,33 +451,35 @@ public class EvolutionaryProcess implements Runnable{
 
 	//compute the deterministic landscape change time
  	double landscapeChangeTime = Double.POSITIVE_INFINITY;
-	if (Model.getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_INTERVAL_LENGTH
-	    || Model.getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_NUM_CHANGES){
-	    landscapeChangeTime = Model.getLandscapeChangeInterval();
+	if (model.getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_INTERVAL_LENGTH
+	    || model.getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_NUM_CHANGES){
+	    landscapeChangeTime = model.getLandscapeChangeInterval();
 	}else //if landscape change timing is stochastic, set the deterministic interval to infinity
 	    landscapeChangeTime = Double.POSITIVE_INFINITY;
 
 	//if the user provided a root sequence file, use the root sequence from there
 	//otherwise, generte generate the root sequence from the root stationary vector
 	//in either case,  add the root sequence to the node2seq map
-	byte[] rootSeqArr = Model.getRootSequenceFromFile();
+	byte[] rootSeqArr = model.getRootSequenceFromFile();
 	Seq rootSeqStr;
 	if (rootSeqArr == null)
 	    rootSeqStr= new Seq(seqLength, landscape);
 	else
 	    rootSeqStr= new Seq(rootSeqArr, landscape);
 
-	    
 	node2seq.put(tree.getRoot(), rootSeqStr.seq);
-	if (Model.collectStats())
+
+ 	if (Parameters.collectStats())
 	    SubstitutionAnalyzer.init(tree, seqLength);
 	
 
-	//queue the root...
+ 	//queue the root...
 	queue.add(new BFSNode(tree.getRoot(), landscape, landscapeChangeTime, rootSeqStr));
 	//...and start evolving!
+
+
 	evolveBFS();
-	if (Model.collectStats())
+	if (Parameters.collectStats())
 	    SubstitutionAnalyzer.substitutionStats();
 
 	tree = null;//clear the tree data

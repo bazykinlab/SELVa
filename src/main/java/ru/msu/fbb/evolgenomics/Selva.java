@@ -10,70 +10,59 @@ import java.util.concurrent.*;
  */
 public class Selva {
 
-    public static void computeLandscapeChangeInterval(BasicTree tree){
-	double maxDepth = tree.getTreeHeight();
-	
-	int numLandscapeChanges = (int)Model.getLandscapeChangeParameter();
-	double interval = maxDepth/(numLandscapeChanges+1);
-	//will this cause problems with rounding?  perhaps it's safer to hard-code the "0 changes" case
-	if (Model.debug())
-	    System.out.println("landscape change interval: " + interval);
-	Model.setLandscapeChangeInterval(interval);
-    }
 
     public static void main (String args[]){
 	try{
-	    Model.init(args[0]);
+	    Parameters.init(args[0]);
 	    double startTime = (double)System.currentTimeMillis();
-	    int numLandscapes = Model.getNumRuns();
-	    int seqLength = Model.getSequenceLength();
-
 	    //read and build the phylogenetic tree
-	    BasicTree tree = new BasicTree(Model.getTreeFile());	    
-
-
-	    // compute the parameters of landscape change.
-	    // wee need to know the tree height for fixed num intervals, so we do it here and not earlier
-	    if (Model.getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_NUM_CHANGES){
-		computeLandscapeChangeInterval(tree);
-	    }else if (Model.getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_INTERVAL_LENGTH){
-		Model.setLandscapeChangeInterval(Model.getLandscapeChangeParameter());
-	    }
-	    else{
-		// we're _not_ doing deterministic change, so set the change interval to infinity
-		Model.setLandscapeChangeInterval(Double.POSITIVE_INFINITY);
-		//interpret the LANDSCAPE_CHANGE_PARAMETER as the stochastic rate
-		Model.setLandscapeChangeRate(Model.getLandscapeChangeParameter());
-	    }
-
+	    BasicTree tree = new BasicTree(Parameters.getTreeFile());	    
 	    //print the values of all model parameters
-	    Model.printParams();
+
 	    System.out.println("tree height : " + tree.getTreeHeight());
+	    Model[] models = Parameters.models;
+	    for (Model model: models){
+		model.computeAndSetLandscapeChangeParameters(tree.getTreeHeight());
+	    }
+
+	    Parameters.printParams();	    
+	    
+	    int numLandscapes = Parameters.getNumRuns();
+	    //	    int seqLength = Model.getSequenceLength();
+	    
+	    
 	    /* start the simulation! */
-
+	    
 	    EvolutionaryProcess[] processes = new EvolutionaryProcess[numLandscapes];
-	    int numThreads = Model.getNumThreads();
-	    int batchSize = numLandscapes / numThreads;
-	    //is this correct?
-	    if (numLandscapes % numThreads > 0)
-		batchSize++;
-
+	    int numThreads = Parameters.getNumThreads();
+	    // int batchSize = numLandscapes / numThreads;
+	    // //is this correct?
+	    // if (numLandscapes % numThreads > 0)
+	    //     batchSize++;
+	    
+	    
 	    ExecutorService executorService = Executors.newFixedThreadPool(numThreads);
-
+	    // this is where the paths for one setup, many instances diverges from variable landscapes
+	
 	    for (int i = 0; i < numLandscapes; i++){
-		processes[i] = new EvolutionaryProcess(tree, seqLength, i);
+		if (!Parameters.getIsVariableLandscapes()){	
+		    processes[i] = new EvolutionaryProcess(tree, models[0], i);
+		}else{
+		    processes[i] = new EvolutionaryProcess(tree, models[i], i);
+		}
 		executorService.execute(processes[i]);
 	    }
 	    
+	    
 	    executorService.shutdown();
-	    if (Model.debug())
+	    if (Parameters.debug())
 		System.err.println("call awaitTermination");
 	    executorService.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-	    if (Model.debug())
+	    if (Parameters.debug())
 		System.err.println("all threads completed");
 
 	    double endTime = (double) System.currentTimeMillis();
-	    if (Model.debug()){
+	    if (Parameters.debug()){
 		System.err.printf("simulations took %.5f seconds\n", (endTime-startTime)/1000.0);
 		System.out.printf("simulations took %.5f seconds\n", (endTime-startTime)/1000.0);
 	    }
@@ -81,7 +70,7 @@ public class Selva {
 	    PrintWriter seqWriter = new PrintWriter("allnodes.merged.fasta");
             PrintWriter changeTimeWriter;
             PrintWriter fitnessWriter;
-            if (Model.printFitnessInfo()){
+            if (Parameters.printFitnessInfo()){
                 changeTimeWriter = new PrintWriter("changetimes.merged.fasta");
                 fitnessWriter = new PrintWriter("fitnesses.merged.fasta");
             }else{  
@@ -89,12 +78,12 @@ public class Selva {
                 fitnessWriter = null;
 
             }
-            String alphabet = Model.getAlphabet();
+            String alphabet = Parameters.getAlphabet();
 	    boolean first = true;
 	    for (BasicNode node: tree.getNodes()){//		byte[] mergedArr = entry.getValue();
 		String nodeName = node.getName();
 		seqWriter.println(">"+nodeName);
-		if (Model.printFitnessInfo()){
+		if (Parameters.printFitnessInfo()){
                     changeTimeWriter.println(">"+nodeName); 
                     fitnessWriter.println(">"+nodeName);
 		}		
@@ -102,28 +91,29 @@ public class Selva {
 		for (int i = 0; i < numLandscapes; i++){
 		    //merge sequence info
 		    byte[] arr = processes[i].node2seq.get(node);
+		    //		    System.out.println("arr: " + arr);
 		    for (int j = 0;  j < arr.length; j++){
 		     	seqWriter.append(alphabet.charAt(arr[j]));
 		    }
 		    //merge fitness change info, but ony if the user asks for it
-                    if (Model.printFitnessInfo()){
+                    if (Parameters.printFitnessInfo()){
                         changeTimeWriter.append(processes[i].changeTracker.getChangeTimes(nodeName) + "; ");
                         fitnessWriter.append(processes[i].changeTracker.getFitnesses(nodeName) + "; ");
                     }
 		    if (first){
-			if (Model.collectStats())
+			if (Parameters.collectStats())
 			    System.err.println("landscape " + i + ": " + processes[i].changeTracker.count + " changes");
 			first =false;
 		    }
                 }
 		seqWriter.println();
-		if (Model.printFitnessInfo()){
+		if (Parameters.printFitnessInfo()){
                     fitnessWriter.println();
                     changeTimeWriter.println();
                 }
 	    }
 	    seqWriter.close();
-	    if (Model.printFitnessInfo()){  
+	    if (Parameters.printFitnessInfo()){  
                 fitnessWriter.close();
                 changeTimeWriter.close();
             }

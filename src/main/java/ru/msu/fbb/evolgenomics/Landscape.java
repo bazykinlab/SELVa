@@ -15,7 +15,7 @@ public class Landscape{
     private double pi[];   // stationary probability vector pi
     private double fitness[]; //fitness vector for the landsacpe
     //    private boolean piComputed = false; //this is set when Q and pi have been computed for the landscape
-    private int alphabetSize = Model.getAlphabetSize(); 
+    private int alphabetSize = Parameters.getAlphabetSize(); 
     //landscape change time will be subtracted as branch time is eaten up.
     private double timeTillLandscapeChange = Double.POSITIVE_INFINITY;     
     private double diagQtimesPi = -1; //let's cache it so we don't recompute
@@ -25,37 +25,41 @@ public class Landscape{
 
     //the PRNG local to the EvolutionaryProcess creating the Landscape
     RandomNumberGenerator random;
+
+    Model model;
+    
     /***** Constructors *****/
     
     /**
      * Create the new landscape object from scratch by querying the Model object
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */
-    public Landscape(RandomNumberGenerator random){//gets the initialization values from Model
-	this.alphabetSize = Model.getAlphabet().length();
+    public Landscape(RandomNumberGenerator random, Model model){//gets the initialization values from Model
+	this.alphabetSize = Parameters.getAlphabet().length();
 	Q = new double[alphabetSize][alphabetSize];
 	pi = new double[alphabetSize];
 
 	fitness = new double[alphabetSize];
 	this.random = random;
-	InitialFitness initialFitnessDefinition = Model.getInitialFitnessDefinition();
+	this.model = model;
+	InitialFitness initialFitnessDefinition = model.getInitialFitnessDefinition();
 	switch(initialFitnessDefinition){
 	case FILE :
-	    fitness = Model.getInitialFitnessFromFile();
+	    fitness = model.getInitialFitnessFromFile();
 	    break;
 	case FLAT:
 	    Fitness.flatFitness(fitness);
 	    break;
 	case LOGNORM:
-	    Fitness.logNormFitness(fitness, random);
+	    Fitness.logNormFitness(fitness, random, model);
 	    break;
 	case GAMMA:
-	    Fitness.gammaFitness(fitness, random);
+	    Fitness.gammaFitness(fitness, random, model);
 	    break;	    
 	default: //should not get here, as this is caught in the InitialFitness class
 	    throw new RuntimeException(initialFitnessDefinition + " fitness not supported");
 	}
-	if (Model.debug()){
+	if (Parameters.debug()){
 	    System.out.println("initial fitness:");
 	    System.out.println(java.util.Arrays.toString(fitness));    
 	}
@@ -64,17 +68,19 @@ public class Landscape{
 	// //unset the flags for having computed pi
 	// piComputed = false;
 	diagQtimesPi = -1; 
-	timeTillLandscapeChange = Model.getLandscapeChangeInterval();	
+	timeTillLandscapeChange = model.getLandscapeChangeInterval();	
     }
     /**
      * Create the new Landsacpe object from the given fitness vector
      * @param fitness the fitness vector
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */    
-    public Landscape(double[] fitness, RandomNumberGenerator random){
+    public Landscape(double[] fitness, RandomNumberGenerator random, Model model){
 	this.fitness = java.util.Arrays.copyOf(fitness, fitness.length);
 	this.alphabetSize = fitness.length;
+	this.model = model;
 
+	
 	setQFromFitness();
 	computePi();
 	//	piComputed = false;
@@ -100,6 +106,7 @@ public class Landscape{
 	}
 	this.diagQtimesPi = source.diagQtimesPi;
 	this.random = source.random;
+	this.model = source.model;
 	// child Landscape(s) having the same PRNG object as the parent
 	//is OK b/c landscapes within a thread are not run in parallel
 	//so there is no danger of the landscapes generating the same
@@ -175,7 +182,7 @@ public class Landscape{
      * The expected substitution rate is not fixed, but is scaled to be 1 for flat landscape only
      */
     private void normalizeQToFlat (){
-	if (Model.debug())
+	if (Parameters.debug())
 	    System.out.println("normalize to flat");
 
 	double normalizationFactor = alphabetSize -1.0f;
@@ -209,7 +216,7 @@ public class Landscape{
      * Wrapper function that chooses how to normalize (or scale) Q
      */
     private void normalizeQ(){
-	if(Model.getQNormalization())
+	if(Parameters.getQNormalization())
 	    normalizeToOne();
 	else
 	    normalizeQToFlat();
@@ -226,7 +233,7 @@ public class Landscape{
 	    sumDiagP -= Q[i][i] * pi[i];	    
 	}
 	diagQtimesPi = sumDiagP;
-	if (Model.debug()){
+	if (Parameters.debug()){
 	//check what we've got
 	    System.out.println("diagQtimesPi = " + diagQtimesPi); 
 	}
@@ -250,7 +257,7 @@ public class Landscape{
      * otherwise, it is computed from the fitness vector directly
      */
     private void computePi(){
-	if (Model.isMutationRateMatrixDefined())
+	if (Parameters.isMutationRateMatrixDefined())
 	    pi = QfromFitness.PiFromQ(Q);
 	else
 	    pi = QfromFitness.PiFromFitness(fitness);
@@ -271,16 +278,16 @@ public class Landscape{
 	Landscape currentLS = ls; //prepare for being able to reuse the old Landscape object
 	
 	//first consider the case where landscapes are shared between paralell branches
-	if (Model.sharedLandscape()){  //if the landscapes are shared between parallel branches
+	if (Parameters.sharedLandscape()){  //if the landscapes are shared between parallel branches
 	    //check if we already have the next landscape (i.e., it's been generated on a
 	    //parallel branch that was visited earlier in the course of simulation execution)
 	    if (ls.nextLandscape == null){ // if it hasn't been generated before, do it now
-		if (Model.debug())
+		if (Parameters.debug())
 		    System.out.println("generate shared landscape on demand");
 		ls.nextLandscape = new Landscape(ls); //at first, next landscape is identical to old one
 		ls.nextLandscape.changeQ(character, newFitness);  //then immediatley change it
 	    }	else{ //if it has been generated before, don't generate it
-		if (Model.debug())
+		if (Parameters.debug())
 		    System.out.println("next shared landscape generated before");
 	    }
 	    //now return the next landscape - whether it's just been generated or saved from
@@ -301,17 +308,17 @@ public class Landscape{
 
     /**
      * Change the landscape (ultimately, changing the Q matrix).  This is the where the 
-     * computation of the new landscape takes place
+       * computation of the new landscape takes place
      * @param character the current allele(index) - for allele-specific fitness change
      * @param newFtness new fitness vector specified by user; null if not specified      
      */
     private void changeQ( byte character, double[] newFitness){
 
-	if (Model.debug()){
+	if (Parameters.debug()){
 	    System.out.println("old fitness:");
 	    System.out.println(java.util.Arrays.toString(fitness));
 	}
-	if (Model.getNewFitnessRule() == NewFitnessRule.USER_SET){
+	if (model.getNewFitnessRule() == NewFitnessRule.USER_SET){
 	    if (newFitness != null){
 		fitness = Arrays.copyOf(newFitness, newFitness.length);
 	    } else{
@@ -319,28 +326,28 @@ public class Landscape{
 	    }		
 	}else{
 	    //choose how the new fitness is calculated
-	    switch (Model.getNewFitnessRule()){
+	    switch (model.getNewFitnessRule()){
 	    case IID:
-		if (Model.debug())
-		    System.out.println("initial fitness: " + Model.getInitialFitnessDefinition());
-		if (Model.getInitialFitnessDefinition() == InitialFitness.LOGNORM)
-		    Fitness.logNormFitness(fitness, random);
-		else if (Model.getInitialFitnessDefinition() == InitialFitness.GAMMA)
-		    Fitness.gammaFitness(fitness, random);
+		if (Parameters.debug())
+		    System.out.println("initial fitness: " + model.getInitialFitnessDefinition());
+		if (model.getInitialFitnessDefinition() == InitialFitness.LOGNORM)
+		    Fitness.logNormFitness(fitness, random, model);
+		else if (model.getInitialFitnessDefinition() == InitialFitness.GAMMA)
+		    Fitness.gammaFitness(fitness, random, model);
 		else
-		    throw new InvalidParameterCombinationException(Model.getInitialFitnessDefinition() + " not compatible with iid new fitness rule");
+		    throw new InvalidParameterCombinationException(model.getInitialFitnessDefinition() + " not compatible with iid new fitness rule");
 		break;
 	    case SHUFFLE:
 		Fitness.shuffleFitness(fitness, random);
 		break;
 	    case CURRENT_ALLELE_DEPENDENT:
-		Fitness.alleleAgeDependentDiscreteChange(fitness, character);
+		Fitness.alleleAgeDependentDiscreteChange(fitness, character, model);
 		break;
 	    default:
-		throw new UnsupportedOperationException("fitness update rule " + Model.getNewFitnessRule() + " not supported");
+		throw new UnsupportedOperationException("fitness update rule " + model.getNewFitnessRule() + " not supported");
 	    }
 	}
-	if (Model.debug()){
+	if (Parameters.debug()){
 	    System.out.println("new fitness:");
 	    System.out.println(java.util.Arrays.toString(fitness));
 	}
@@ -389,8 +396,8 @@ public class Landscape{
 	System.out.println();
     }
 
-    
-    public static void main (String args[]){
+                                                                  
+    /*    public static void main (String args[]){
 	double [] fitness = new double[20];
 	RandomNumberGenerator rand = new RandomNumberGenerator();
 	Fitness.logNormFitness(fitness,rand);
@@ -398,5 +405,5 @@ public class Landscape{
 	//	landscape.printParams();
 	landscape.changeQ((byte)0, null);
 	//landscape.printParams();
-    }
+	}*/
 }

@@ -22,9 +22,9 @@ public class Fitness{
      * @param fitness vector to fill
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */
-    public static void gammaFitness(double[] fitness, RandomNumberGenerator random){
+    public static void gammaFitness(double[] fitness, RandomNumberGenerator random, Model model){
 	//	double DIST_PARAM = Model.getDistParam();
-	gammaFitness(fitness, Model.getGammaAlpha(), Model.getGammaBeta(), random);
+	gammaFitness(fitness, model.getGammaAlpha(), model.getGammaBeta(), random);
     }
 
 
@@ -45,8 +45,8 @@ public class Fitness{
      * @param fitness vector to fill
      * @param random the RandomNumberGenerator object providing the RNG to be used
      */
-    public static void logNormFitness(double[] fitness, RandomNumberGenerator random){
-	double SIGMA = Model.getSigma();
+    public static void logNormFitness(double[] fitness, RandomNumberGenerator random, Model model){
+	double SIGMA = model.getSigma();
 	logNormFitness(fitness, 0, SIGMA, random);
     }
     /**
@@ -75,11 +75,11 @@ public class Fitness{
      * @param fitness the fitnes vector
      * @param character the current allele
      */
-    public static void alleleAgeDependentDiscreteChange(double[] fitness, byte character){
+    public static void alleleAgeDependentDiscreteChange(double[] fitness, byte character, Model model){
 	double sum = 0.0;	    
-	double kt = Model.getLandscapeChangeInterval() * Model.getAlleleAgeDependenceCoef();
+	double kt = model.getLandscapeChangeInterval() * model.getAlleleAgeDependenceCoef();
 	fitness[character] += kt;
-	if (Model.debug())
+	if (Parameters.debug())
 	    System.out.println("increase fitness of allele " + character + " by " + kt);
     }
 }

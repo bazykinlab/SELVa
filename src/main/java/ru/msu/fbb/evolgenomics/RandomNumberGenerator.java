@@ -17,7 +17,6 @@ public class RandomNumberGenerator{
     private LogNormalDistribution logNormalDistribution;
     private double cache_lognorm_mean = Double.NaN;    //for caching the distribution object
     private double cache_lognorm_stdev = Double.NaN;
-    
 
 
     public RandomNumberGenerator(){
@@ -26,8 +25,8 @@ public class RandomNumberGenerator{
     
     private  void initRandomNumberGenerator(){
 	if (randomNumberGenerator == null){
-	    //very expensive, but hopefully we do it once per process
-	    long seed = (new BigInteger((new SecureRandom()).getSeed(8))).longValue();
+	    ////very expensive, but hopefully we do it once per process
+	    //	    long seed = (new BigInteger((new SecureRandom()).getSeed(8))).longValue();
 	    //	    randomNumberGenerator = new ISAACRandom(seed);
 	    randomNumberGenerator = new ThreadLocalRandomGenerator();
 	}
@@ -69,7 +68,8 @@ public class RandomNumberGenerator{
     public  double sampleExponential(double lambda){
 	if (exponentialDistribution == null || lambda != cache_exp_lambda){
 	    exponentialDistribution =
-		new ExponentialDistribution(new ThreadLocalRandomGenerator(), 1.0/lambda,  ExponentialDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
+		//		new ExponentialDistribution(new ThreadLocalRandomGenerator(), 1.0/lambda,  ExponentialDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
+		new ExponentialDistribution(randomNumberGenerator, 1.0/lambda,  ExponentialDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
 	    cache_exp_lambda = lambda;
  	    // if (Model.debug())
 	    // 	System.out.println("new ExponentialDistribution object created wth lambda " + lambda);
@@ -87,7 +87,8 @@ public class RandomNumberGenerator{
 	if (logNormalDistribution == null &&
 	    (norm_mean != cache_lognorm_mean || norm_stdev != cache_lognorm_stdev )){
 		logNormalDistribution =
-		    new LogNormalDistribution(new ThreadLocalRandomGenerator(), norm_mean, norm_stdev,  LogNormalDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
+		    //		    new LogNormalDistribution(new ThreadLocalRandomGenerator(), norm_mean, norm_stdev,  LogNormalDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
+		    new LogNormalDistribution(randomNumberGenerator, norm_mean, norm_stdev,  LogNormalDistribution.DEFAULT_INVERSE_ABSOLUTE_ACCURACY);
 		cache_lognorm_mean = norm_mean;
 		cache_lognorm_stdev = norm_stdev;
 		// if (Model.debug())
@@ -122,7 +123,8 @@ public class RandomNumberGenerator{
 	
 	//double r = ThreadLocalRandom.current().nextDouble(1.0);
 	double r = nextDouble();
-	//	System.out.println("sample discrete r = " + r);
+	
+	//      	System.out.println("sample discrete r = " + r);
 	double cum = 0.0;
 	while (true){
 	    //trick from Princeton's IntroCS StdRandom library implementation to deal with roundoff error

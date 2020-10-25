@@ -21,85 +21,98 @@ class ChangeTime{
  * The class for used to read and store the model parameters (provided in the config file).
  */
 public class Model{
-    private static HashMap<String, String> configValues = new HashMap<String, String>();
-    private static String alphabet;
-    private static int sequenceLength = 0;
-    private static boolean debug = false;
-    private static boolean collectStats = false;
-    private static int numInstances = 1;
-    private static int numThreads = 1;
-    private static String treeFile;
-    private static String fitnessFile;
-    private static boolean sharedLandscape = false;
-    private static NewFitnessRule newFitnessRule;
-    private static LandscapeChangeTiming landscapeChangeTiming;
-    private static InitialFitness initialFitnessDefinition;
-    private static byte[] rootSequence;
-    private static double sigma = -1;
-    private static double alpha = -1;
-    private static double beta = -1;
-    private static double landscapeChangeRate = 0;
-    private static double landscapeChangeInterval = Double.POSITIVE_INFINITY;
-    private static double landscapeChangeParameter;
-    private static double ageDependenceCoef = Double.NaN;
-    //    private static boolean fixSumFitness = false;
-    private static boolean printFitnessInfo = false;
-    private static boolean qNormalization = true;
-    private static boolean scaleLandscapeChangeToSubstitutionRate = false;
-    private static double[] initialFitnessVectorFromFile; //the fitness vectore read from file
-    private static double[][] mutationRateMatrix; // mutation rate matrix (set to all 1's by default
-    private static HashMap<String, double[]> position2fitness; //map a string encoding branch and position
+    private String fitnessFile;
+    private NewFitnessRule newFitnessRule;
+    private LandscapeChangeTiming landscapeChangeTiming;
+    private InitialFitness initialFitnessDefinition;
+    private byte[] rootSequence;
+    private double sigma = -1;
+    private double alpha = -1;
+    private double beta = -1;
+    private double landscapeChangeRate = 0;
+    private double landscapeChangeInterval = Double.POSITIVE_INFINITY;
+    private double landscapeChangeParameter;
+    private double ageDependenceCoef = Double.NaN;
+    //    private boolean fixSumFitness = false;
+    private double[] initialFitnessVectorFromFile; //the fitness vectore read from file
+
+    private HashMap<String, double[]> position2fitness; //map a string encoding branch and position
                                                                //to a fitness vector
-    private static HashMap<String, ChangeTime> changeBranchTimeFitness;
+    private HashMap<String, ChangeTime> changeBranchTimeFitness;
 
     /** 
      * @return the user-specified root sequence, encoded as indices of the ALPHABET string, or null if it is not provided
      * in the latter case, the root sequence will be generated from the root landscape's stationary distribution
      */
-    public static byte[] getRootSequenceFromFile(){ return rootSequence;  }
+    public byte[] getRootSequenceFromFile(){ return rootSequence;  }
     
-    public static void setLandscapeChangeRate( double r){ landscapeChangeRate = r;}
-    public static void setLandscapeChangeInterval(double x){landscapeChangeInterval = x;}
-    public static double getLandscapeChangeRate() {return landscapeChangeRate;}
-    public static double getLandscapeChangeInterval(){return landscapeChangeInterval; }
+    public void setLandscapeChangeRate( double r){ landscapeChangeRate = r;}
+    public void setLandscapeChangeInterval(double x){landscapeChangeInterval = x;}
+    public double getLandscapeChangeRate() {return landscapeChangeRate;}
+    public double getLandscapeChangeInterval(){return landscapeChangeInterval; }
 
-    public static double getAlleleAgeDependenceCoef() {return ageDependenceCoef;}
-    public static double getSigma() { return sigma;  }
-    public static double getGammaAlpha() { return alpha;  }
-    public static double getGammaBeta() { return beta;  }
-    public static String getFitnessFile() { return fitnessFile;}
-    public static boolean isMutationRateMatrixDefined(){return mutationRateMatrix!=null;}
+    public double getAlleleAgeDependenceCoef() {return ageDependenceCoef;}
+    public void setAgeDependenceCoef(double coef) {ageDependenceCoef = coef;}
+    public double getSigma() { return sigma;  }
+    public void setSigma(double s) {  sigma = s;  }
+    public double getGammaAlpha() { return alpha;  }
+    public void setGammaAlpha(double a) { alpha = a;  }
+    public double getGammaBeta() { return beta;  }
+    public void setGammaBeta(double b) { beta = b;  }
+    public String getFitnessFile() { return fitnessFile;}
+    public void setFitnessFile(String ff) { fitnessFile = ff;}
+
     /* getters for the parameters that are always set */
-    public static int getSequenceLength(){return sequenceLength;};
-    public static int getNumRuns(){return numInstances;}
-    public static int getNumThreads(){return numThreads;}
-    public static String  getAlphabet(){return alphabet;};
-    public static int  getAlphabetSize(){return alphabet.length();};
-    public static double getLandscapeChangeParameter(){ return landscapeChangeParameter;}
-    public static String getTreeFile(){return treeFile;} 
+    public int getSequenceLength(){return sequenceLength;};
+    private int sequenceLength;
+    public void setSequenceLength(int sl){sequenceLength = sl;};
+    public double getLandscapeChangeParameter(){ return landscapeChangeParameter;}
+    public void setLandscapeChangeParameter(double lcp){ landscapeChangeParameter = lcp;}
+    public InitialFitness getInitialFitnessDefinition(){return initialFitnessDefinition;}
+    public void setInitialFitnessDefinition(InitialFitness ifd){ initialFitnessDefinition = ifd;}
+    public LandscapeChangeTiming getLandscapeChangeTiming(){return landscapeChangeTiming;}
+    public void setLandscapeChangeTiming(LandscapeChangeTiming lct){ landscapeChangeTiming = lct;}
+    public NewFitnessRule getNewFitnessRule(){return newFitnessRule;}
+    public void setNewFitnessRule(NewFitnessRule nfr){ newFitnessRule = nfr;}
 
-    public static boolean debug(){return debug;}
-    public static boolean collectStats(){return collectStats;}
-    public static InitialFitness getInitialFitnessDefinition(){return initialFitnessDefinition;}
-    public static LandscapeChangeTiming getLandscapeChangeTiming(){return landscapeChangeTiming;}
-    public static NewFitnessRule getNewFitnessRule(){return newFitnessRule;}
-    public static boolean getQNormalization(){return qNormalization;}
-    public static boolean scaleLandscapeChangeToSubstitutionRate(){
-	return scaleLandscapeChangeToSubstitutionRate;
-    }
-
-    public static boolean sharedLandscape(){return sharedLandscape;}
-    public static boolean fixSumFitness(){ return false; }     //not used
-    public static boolean printFitnessInfo(){ return printFitnessInfo;  }
-    public static boolean changeAtSpecifiedBranchAndTime(){
+    //    public boolean sharedLandscape(){return sharedLandscape;}
+    public boolean fixSumFitness(){ return false; }     //not used
+    public boolean changeAtSpecifiedBranchAndTime(){
 	return landscapeChangeTiming == LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME;
     }
+        
+    private void computeLandscapeChangeInterval(double maxDepth){
+	
+	int numLandscapeChanges = (int)getLandscapeChangeParameter();
+	double interval = maxDepth/(numLandscapeChanges+1);
+	//will this cause problems with rounding?  perhaps it's safer to hard-code the "0 changes" case
+	if (Parameters.debug())
+	    System.out.println("landscape change interval: " + interval);
+	setLandscapeChangeInterval(interval);
+    }
 
+    public void computeAndSetLandscapeChangeParameters(double maxDepth){
+	// compute the parameters of landscape change.
+	// wee need to know the tree height for fixed num intervals, so we do it here and not earlier
+	if (getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_NUM_CHANGES){
+	    computeLandscapeChangeInterval(maxDepth);
+	}else if (getLandscapeChangeTiming() == LandscapeChangeTiming.FIXED_INTERVAL_LENGTH){
+	    setLandscapeChangeInterval(getLandscapeChangeParameter());
+	}
+	else{
+	    // we're _not_ doing deterministic change, so set the change interval to infinity
+	    setLandscapeChangeInterval(Double.POSITIVE_INFINITY);
+	    //interpret the LANDSCAPE_CHANGE_PARAMETER as the stochastic rate
+	    setLandscapeChangeRate(getLandscapeChangeParameter());
+	}
+    }
+
+    
     /**
      * @param node finishing the branch that is queries
      * @return Double.NEGATIVE_INFINITY if no change this branch, time till the end node otherwise
      */
-    public static double getChangeTimeThisBranch(BasicNode node){
+    public double getChangeTimeThisBranch(BasicNode node){
 	String nodeName = node.toString();
 	if (changeBranchTimeFitness.containsKey(nodeName))
 	    return changeBranchTimeFitness.get(nodeName).time;
@@ -111,7 +124,7 @@ public class Model{
      * @param node finishing the branch that is queries
      * @return null if no change this branch,  new fitnessime till the end node otherwise (which itself might be null);
      */
-    public static double[] getNewFitnessThisBranch(BasicNode node){
+    public double[] getNewFitnessThisBranch(BasicNode node){
 	String nodeName = node.toString();
 	if (changeBranchTimeFitness.containsKey(nodeName))
 	    return changeBranchTimeFitness.get(nodeName).fitness;
@@ -119,33 +132,14 @@ public class Model{
 	    return null;
     }
 
-    //wrapper function that throws a slightly more informative exception when a parameter is missing (or misspelled)
-    private static String getRequiredParameter(String parameter) throws MissingParameterException {
-	  String response = configValues.get(parameter);
-	  if (response == null)
-	      throw new MissingParameterException(parameter);
-	  else
-	      return response;
-      }
-
-    //wrapper function that throws a slightly more informative exception when a parameter is missing (or misspelled)
-    //this version accomodates different names for the parameter that is changed and whose absence is reported
-    private static String getRequiredParameter(String parameter, String name4msg ) throws MissingParameterException {
-	  String response = configValues.get(parameter);
-	  if (response == null)
-	      throw new MissingParameterException(name4msg);
-	  else
-	      return response;
-      }
-
 
     /**
      * get the String corresponding to the alphabet index array
      * @param seqArr - sequence as array of bytes
      * @return corresponding sequence as a String
      */
-     public static String arr2seq(byte [] seqArr){
-	String alphabet = getAlphabet();
+     public String arr2seq(byte [] seqArr){
+	String alphabet = Parameters.getAlphabet();
 	char[] charArr = new char[seqArr.length];
 	for (int i = 0; i < seqArr.length; i++){
 	    charArr[i] = alphabet.charAt(seqArr[i]);
@@ -157,7 +151,7 @@ public class Model{
      * Return the fitness vector to change to at the provided branch and position (until the end of that branch)
      * only works if LANDSCAPCE_CHANGE_TIMING is  specified_branch_and_time
      */
-    public static double[] getFitnessForPosition(String branchName, double position){
+    public double[] getFitnessForPosition(String branchName, double position){
 	if (landscapeChangeTiming != LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME)
 	    throw new
 		InvalidParameterCombinationException("getFitnessForPosition() only applicable if  LANDSCAPCE_CHANGE_TIMING is set to  specified_branch_and_time");
@@ -165,17 +159,16 @@ public class Model{
 	return position2fitness.get(key);
     }
 
-    public static double[] getInitialFitnessFromFile(){
+    public double[] getInitialFitnessFromFile(){
 	if (initialFitnessVectorFromFile == null)
 	    readFitnessFromFile();
 	return java.util.Arrays.copyOf(initialFitnessVectorFromFile, initialFitnessVectorFromFile.length);
     }
 
-    private static void readFitnessFromFile(){
-	initialFitnessVectorFromFile = new double[alphabet.length()];
+    public void readFitnessFromFile(){
+	initialFitnessVectorFromFile = new double[Parameters.getAlphabet().length()];
  	//alphabetSize = Model.getAlphabet().length();
 	// double[] fitness = new double[alphabetSize];
-	String fitnessFile = getRequiredParameter("FITNESS_FILE");
 	try{
 	    Scanner sc = new Scanner(new File(fitnessFile));
 	    for (int i = 0; i < initialFitnessVectorFromFile.length; i++)
@@ -193,104 +186,22 @@ public class Model{
 	    System.exit(-1);
 	}
     }
-
-    private static void readRootSequence(){
-	String rootSeqFile = configValues.get("ROOT_SEQUENCE_FILE");
-	if (rootSeqFile != null){
-	    try{
-		rootSequence = new byte[sequenceLength];
-	
-		String rootSeq = "";
-		boolean first = true;
-		Scanner sc = new Scanner(new File(rootSeqFile));
-		while(sc.hasNext()){
-		    String nextLine = sc.next();
-		    //accomodate fasta format
-		    if (nextLine.charAt(0)== '>')
-			if (first)
-			    continue;
-			else
-			    break;
-		    first = false;//fasta header
-		    rootSeq += nextLine;
-		}
-
-		//check that the root sequence belongs to the closure of the alphabet
-		if (rootSeq.length() < sequenceLength)
-			throw new IllegalArgumentException("The provided root sequence is shorter ("+ rootSeq.length() + ") than the given sequence Length ("+sequenceLength+").");
-		for (int i = 0; i < sequenceLength; i++){
-		    int index = alphabet.indexOf(rootSeq.charAt(i));
-		    if (index== -1){
-		    throw new IllegalArgumentException("The provided root sequence contains non-alphabet character: " + rootSeq.charAt(i));
-		    }else{
-			rootSequence[i] = (byte)index;
-		    }
-		}
-	    }
-	    catch(FileNotFoundException e){
-		System.err.println("Error: cannot open the root sequence file " + rootSeqFile);
-		System.exit(-1);
-	    }
-	}
+    public void setRootSequence(byte[] seq){
+	rootSequence = seq;
     }
 
-    /**
-     * return the mutation rate from character indexed i to character indexed j
-     * if mutation rate matrix has not been provided (is null), return 1.0
-     * @param i, j - indices of the characters of interest
-     * @return mutation rate from character i to character j
-     */
-
-    public static double getMutationRate(int i, int j){
-	if (mutationRateMatrix == null)
-	    return 1.0;
-	else
-	    return mutationRateMatrix[i][j];
-    }
-
-    /**
-     * read the mutation rate matrix from file, if it is provided in the config file
-     */
-    public static void readMutationRateMatrix(){
-	int alphabetLength = alphabet.length();
-
-	String filename = configValues.get("MUTATION_RATE_MATRIX_FILE");
-
-	if (filename != null){
-	    mutationRateMatrix = new double[alphabetLength][alphabetLength];
-	
-	    try{
-		Scanner sc = new Scanner(new File(filename));
-		for (int i = 0; i < alphabetLength; i++)
-		    for (int j = 0; j < alphabetLength; j++)
-			mutationRateMatrix[i][j] = sc.nextDouble();
-		sc.close();
-	    }catch(FileNotFoundException e){
-		System.err.println("Error: cannot open the mutation rate matrix file " + filename);
-		System.exit(-1);
-	    }catch(InputMismatchException e){
-		System.err.println("Error: non-numeric value in your mutation rate file");
-		System.exit(-1);
-	    }
-	    catch(NoSuchElementException e){
-		System.err.println("Error: mutation rate matrix dimension seems to be shorter than the alphabet");
-		System.exit(-1);
-	    }
-	    
-	}
-    }
     
     /**
      * auxiliary function for converting branch name + time to key
      */
-    public static String branchAndTimeToKey( String branch, double time){
+    public String branchAndTimeToKey( String branch, double time){
 	return branch + " " + time;
     }
     
     /** Read the prespecified coordinates of landscape changes from a file
      * @param changeBranchAndTimeFileStr - name of the file with landscape change coordinates
      */
-    private static void readChangeBranchAndTimeFile(String changeBranchAndTimeFileStr){
+    public void readChangeBranchAndTimeFile(String changeBranchAndTimeFileStr){
 	//TODO: have to do sth about rounding issues with position
 
 	changeBranchTimeFitness = new HashMap<String, ChangeTime> ();
@@ -303,7 +214,7 @@ public class Model{
 		    continue;
 		String[] fields = line.split("\\s+");
 		//either just branch + time, or branch + time + fitness vector
-		if (fields.length  !=  2 && fields.length != 2 + getAlphabetSize() ){
+		if (fields.length  !=  2 && fields.length != 2 + Parameters.getAlphabetSize() ){
 		    System.err.println("error in change branch time file " + changeBranchAndTimeFileStr);
 		    System.err.println("line: " + line);
 		    System.exit(-1);
@@ -314,10 +225,10 @@ public class Model{
 			double time = Double.parseDouble(fields[1]);
 			double [] fitness = null;
 			
-			if ( fields.length == 2 + getAlphabetSize()){//the fitness is specified by the user
+			if ( fields.length == 2 + Parameters.getAlphabetSize()){//the fitness is specified by the user
 
-			    fitness = new double[getAlphabetSize()];
-			    for (int i = 0; i < getAlphabetSize(); i++){
+			    fitness = new double[Parameters.getAlphabetSize()];
+			    for (int i = 0; i < Parameters.getAlphabetSize(); i++){
 				fitness[i] = Double.parseDouble(fields[2+i]);
 			    }
 			    String key = branchAndTimeToKey(branch, time);
@@ -336,18 +247,16 @@ public class Model{
 	}
     }
     
-    public static void printParams(){
-	System.out.println("Parameter values are:");
+    public void printParams(){
+	System.out.println("Model parameters:");
 	try{
 	    Class <?> c = Model.class;
 	    for (Field f : c.getDeclaredFields()){
 		String name = f.getName();
-		if (!name.equals("debug") && !name.equals("configValues")
-		    && !name.equals("initialFitnessVectorFromFile")
-		    && !name.equals("rootSequence")
-		    && !name.equals("initialFitnessVectorFromFile")
-		    && !name.equals("changeBranchTimeFitness"))
-		    System.out.println(name + " : " + f.get(null));
+		if (!name.equals("fitnessFile")){
+		    System.out.print(name + ":");
+		    System.out.println(f.get(null));
+		}
 	    }
 	    if (changeBranchTimeFitness != null){
 		System.out.println("changeBranchTimeFitness :");
@@ -355,188 +264,15 @@ public class Model{
 		    System.out.println("\t" + entries.getKey() + " : " + entries.getValue());
 		}
 	    }
+	    System.out.println("fitnessFile: " + fitnessFile);
 	    System.out.println("initialFitnessVectorFromFile : " + java.util.Arrays.toString(initialFitnessVectorFromFile));
 	    System.out.println("rootSequence (as indices of ALPHABET) : " + java.util.Arrays.toString(rootSequence));
-	    System.out.print("mutationRateMatrix : ");
-	    if (mutationRateMatrix == null)
-		System.out.println("null");
-	    else{
-		System.out.println("");
-		for (double[] arr : mutationRateMatrix)
-		    System.out.println(java.util.Arrays.toString(arr));
-	    }
+	
 	}catch(Exception e){
 	    e.printStackTrace();
 	}
     }
 
-    //parse the config file
-    public static void init(String configFile){	
-	try{
-	    Scanner sc;
-	    if (configFile.equals("-"))
-		sc = new Scanner(System.in);
-	    else
-		sc = new Scanner(new File(configFile));
-	    
-	    while (sc.hasNextLine()){
-		String line = sc.nextLine();
-		if (line.length() == 0 || line.charAt(0) == '#')
-		    continue;
-		String[] fields = line.split("\\s+");
-		if (fields.length!=2)
-		    System.err.println("line: " + line);
-		else
-		    configValues.put(fields[0], fields[1]);
-	    }
-	}catch (IOException e){
-	    System.err.println("Error opening config file " + configFile);
-	    System.exit(-1);
-	}
-	try{ //this is solely for the sake of simplified missing parameter exception handling
-	    sequenceLength = Integer.parseInt(getRequiredParameter("LENGTH"));
-	    String debugStr = configValues.get("DEBUG");
-	    if (debugStr != null)
-		debug=Boolean.parseBoolean(debugStr);
-
-	    String statsStr = configValues.get("COLLECT_STATS");
-	    if (statsStr != null)
-		collectStats=Boolean.parseBoolean(statsStr);
-
-	    
-	    alphabet = getRequiredParameter("ALPHABET");
-	    treeFile = getRequiredParameter("TREE_FILE");
-
-	    readRootSequence();
-	    readMutationRateMatrix();
-	    
-	    String numRunsStr = configValues.get("NUM_INSTANCES");
-	    if (numRunsStr == null)
-		numRunsStr = configValues.get("NUM_RUNS"); //old in-house name, supported for backward compatibility
-	    if (numRunsStr != null)
-		numInstances = Integer.parseInt(numRunsStr); //else it defaults to 1
-	    
-	    String numThreadsStr = configValues.get("NUM_THREADS");
-	    if (numThreadsStr != null){
-		numThreads = Integer.parseInt(numThreadsStr);
-	    }
-	    
-	    initialFitnessDefinition = InitialFitness.stringToEnum(getRequiredParameter("INITIAL_FITNESS"));
-	    
-	    String newFitnessRuleStr = configValues.get("NEW_FITNESS_RULE");
-	    if (newFitnessRuleStr == null)
-		newFitnessRuleStr = configValues.get("FITNESS_UPDATE_RULE");//old in-house name, supported for backward compatibility
-	    if (newFitnessRuleStr == null)
-		throw new MissingParameterException("NEW_FITNESS_RULE");
-	    newFitnessRule = NewFitnessRule.stringToEnum(newFitnessRuleStr);
-	    
-	    String landscapeChangeTimingStr = configValues.get("LANDSCAPE_CHANGE_TIMING");
-	    if (landscapeChangeTimingStr == null)
-		landscapeChangeTimingStr = configValues.get("LANDSCAPE_CHANGE_RULE"); //old in-house name, supported for backward compatibility
-	    if (landscapeChangeTimingStr == null)
-		throw new MissingParameterException("LANDSCAPE_CHANGE_TIMING");
-	    landscapeChangeTiming = LandscapeChangeTiming.stringToEnum(landscapeChangeTimingStr);
-	    
-	    String sharedLandscapeStr = configValues.get("SHARED_LANDSCAPE");
-	    if (sharedLandscapeStr == null)
-		sharedLandscape = false;
-	    else
-		sharedLandscape =  Boolean.parseBoolean(sharedLandscapeStr);
-
-	    if (landscapeChangeTiming != LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME)
-		landscapeChangeParameter = Double.parseDouble(getRequiredParameter("LANDSCAPE_CHANGE_PARAMETER"));
-	    else{
-		String changeBranchAndTimeFileStr = configValues.get("CHANGE_BRANCH_AND_TIME_FILE");
-		readChangeBranchAndTimeFile(changeBranchAndTimeFileStr);
-	    }
-	    
-	    if (landscapeChangeTiming==LandscapeChangeTiming.SPECIFIED_BRANCH_AND_TIME &&
-		sharedLandscape == true)
-		throw new InvalidParameterCombinationException("Can't have shared landscape and specified branch and time of change");
-	    // String fixSumFitnessStr = configValues.get("FIX_SUM_FITNESS");
-	    // if (fixSumFitnessStr == null)
-	    // 	fixSumFitness = false;
-	    // else		
-	    // 	fixSumFitness =  Boolean.parseBoolean(fixSumFitnessStr);
-		
-	    
-	    String printFitnessInfoStr = configValues.get("PRINT_LANDSCAPE_INFO");
-	    if (printFitnessInfoStr == null)
-		printFitnessInfo = false;
-	    else
-		printFitnessInfo =  Boolean.parseBoolean(printFitnessInfoStr);
-	    
-	    
-	    String qNormalizationStr = configValues.get("CONSTANT_RATE");
-	    if (qNormalizationStr==null)
-		qNormalization = true;
-	    else
-		qNormalization = Boolean.parseBoolean(qNormalizationStr);
-	    	   
-	    String scaleLandscapeStr = configValues.get("SCALE_LANDSCAPE_CHANGE_TO_SUBSTITUTION_RATE");
-	    if (scaleLandscapeStr == null)
-		scaleLandscapeChangeToSubstitutionRate = false;
-	    else
-		scaleLandscapeChangeToSubstitutionRate = Boolean.parseBoolean(scaleLandscapeStr);
-	
-	
-
-
-	    //check for invalid combination of inputs
-	    //and for context-specific parameters:
-	    if (newFitnessRule == NewFitnessRule.CURRENT_ALLELE_DEPENDENT){
-		if (sequenceLength != 1)
-		    throw new InvalidParameterCombinationException("Allele-dependent landscape change only works for single-site landscapes");
-		if (landscapeChangeTiming != LandscapeChangeTiming.FIXED_INTERVAL_LENGTH
-		    && landscapeChangeTiming != LandscapeChangeTiming.FIXED_NUM_CHANGES)
-		    throw new InvalidParameterCombinationException("Allele-dependent landscape change only implemented for deterministic landscape change");
-
-		//read the AGE_DEPENDENCE_COEFFICIENT
-		String response = configValues.get("AGE_DEPENDENCE_COEFFICIENT");//misspelling fixed
-		
-		if (response == null)
-		    configValues.get("EPISTASIS_COEFFICIENT"); //old in-house name, kept for backward compatibility
-		if (response != null)
-		    ageDependenceCoef = Double.parseDouble(response);
-		else
-		    throw new MissingParameterException ("AGE_DEPENDENCE_COEFFICIENT, required for allele-dependent fitness change");
-	    }
-
-	    //in the following, we make some extra motions to support the legacy DIST_PARAM parameter that used to parametrize both distributions
-	    if (initialFitnessDefinition == InitialFitness.LOGNORM ){
-		String sigmaStr = configValues.get("SIGMA");
-		if (sigmaStr == null){
-		    sigma = Double.parseDouble(getRequiredParameter("DIST_PARAM", "SIGMA"));
-		}else{
-		    sigma = Double.parseDouble(sigmaStr);
-		}
-		
-	    } else if (initialFitnessDefinition == InitialFitness.GAMMA){
-		//		double alpha, beta;
-		String alphaStr = configValues.get("GAMMA_ALPHA");
-		String betaStr = configValues.get("GAMMA_BETA");
-		if (alphaStr == null || betaStr == null){
-		    alpha = Double.parseDouble(getRequiredParameter("DIST_PARAM", "GAMMA_ALPHA and GAMMA_BETA"));
-		    beta = alpha;
-		}else{
-		    alpha = Double.parseDouble(alphaStr);
-		    beta = Double.parseDouble(betaStr);
-		}
-	    }
-	    if (initialFitnessDefinition == InitialFitness.FILE){
-		fitnessFile = getRequiredParameter("FITNESS_FILE");
-		if (newFitnessRule == NewFitnessRule.IID)
-		    throw new InvalidParameterCombinationException("initial fitness definition " + Model.getInitialFitnessDefinition() + " not compatible with new fitness rule IID ");
-	    }
-	}catch(MissingParameterException | InvalidParameterCombinationException  | UnrecognizedValueException e){
-	    System.err.println(e.getMessage());
-	    System.exit(-1);
-	}
-	
-	if (initialFitnessDefinition == InitialFitness.FILE)
-	    readFitnessFromFile();
-	
-    }
 }
 
   

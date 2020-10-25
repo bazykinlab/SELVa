@@ -36,7 +36,7 @@ public class QfromFitness{
 			Q[i][j] = diff/(double)(1-Math.exp(-diff));
 		    else
 			Q[i][j] = 1;
-		    Q[i][j] *= Model.getMutationRate(i, j);
+		    Q[i][j] *= Parameters.getMutationRate(i, j);
 		    rowsums[i]+=Q[i][j];
 		}
 	    }
@@ -56,7 +56,7 @@ public class QfromFitness{
      * @return stationary distribution pi
      */
     public static double[]  PiFromFitness (double[] fitness) {
-	if (Model.debug()){
+	if (Parameters.debug()){
 	    System.out.println("PiFromFitness");
 	}
 	double[] expVect = new double[fitness.length];
@@ -85,7 +85,7 @@ public class QfromFitness{
 	   pi*(Q+1) = [1,1,...,1]
 	   where Q+1 is the elementwise sum of Q and a matrix of all ones
 	*/
-	if (Model.debug()){
+	if (Parameters.debug()){
 	    System.out.println("PiFromQ");
 	}
 	RealMatrix Qmat = new Array2DRowRealMatrix(Q);
