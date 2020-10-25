@@ -31,6 +31,7 @@ example_stochastic: an example of stochastic landscape change with randomly samp
 
 example_age: an example of the current allele's fitness increasing with time (age)
 
+example_variable_landsccapes: three landscapes, each governed by its own rules (though in this case they largely overlap)
 
 In each case, the .fasta files are example of output.  In the stochastic case, they will be different for every simulation.
 
